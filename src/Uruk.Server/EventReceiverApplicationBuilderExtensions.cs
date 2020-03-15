@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     /// <summary>
     /// <see cref="IApplicationBuilder"/> extension methods for the <see cref="EventReceiverMiddleware"/>.

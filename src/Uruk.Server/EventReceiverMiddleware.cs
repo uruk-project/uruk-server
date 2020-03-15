@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class EventReceiverMiddleware
     {

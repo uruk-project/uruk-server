@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class EventReceiverOptions
     {

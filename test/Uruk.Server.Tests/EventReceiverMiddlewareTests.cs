@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
-namespace UrukServer.Tests
+namespace Uruk.Server.Tests
 {
     public class EventReceiverMiddlewareTests
     {

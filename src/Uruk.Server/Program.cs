@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class Program
     {

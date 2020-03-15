@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public interface IEventSink
     {

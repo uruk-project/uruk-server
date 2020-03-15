@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class TokenResponse
     {
