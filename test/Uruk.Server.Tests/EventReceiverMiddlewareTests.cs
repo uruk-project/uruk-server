@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -6,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using JsonWebToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -204,7 +206,7 @@ namespace Uruk.Server.Tests
         }
 
         [Fact]
-        public async Task ReturnsJsonStatus()
+        public async Task ReturnsAccepted()
         {
             var builder = new WebHostBuilder()
                 .Configure(app =>
@@ -240,6 +242,47 @@ namespace Uruk.Server.Tests
             Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
             Assert.Null(response.Content.Headers.ContentType);
             Assert.Equal(0, response.Content.Headers.ContentLength);
+        }
+        
+        [Fact]
+        public async Task ReturnsError()
+        {
+            var builder = new WebHostBuilder()
+                .Configure(app =>
+                {
+                    app.UseEventReceiver("/events");
+                })
+                .ConfigureServices(services =>
+                {
+                    services.AddEventReceiver("uruk")
+                        .Add(new EventReceiverRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .Add(new EventReceiverRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                    services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                        .AddJwtBearer(o =>
+                        {
+                            o.TokenValidationParameters = new TokenValidationParameters()
+                            {
+                                ValidIssuer = "issuer.contoso.com",
+                                ValidAudience = "audience.contoso.com",
+                                IssuerSigningKey = GetKey(),
+                                NameClaimType = "sub"
+                            };
+                        });
+                    services.AddTransient<IEventReceiverService, ErrorEventReceiverService>();
+                });
+            var server = new TestServer(builder);
+            var client = server.CreateClient();
+
+            var message = new HttpRequestMessage(HttpMethod.Post, "/events");
+            message.Headers.Accept.ParseAdd("application/json");
+            message.Content = new StringContent(CreateSecurityEventToken());
+            message.Content.Headers.ContentType = new MediaTypeHeaderValue("application/secevent+jwt");
+            message.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, CreateBearerToken());
+            var response = await client.SendAsync(message);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            
+            Assert.Equal("application/json", response.Content.Headers.ContentType.ToString());
+            Assert.Equal("{\"err\":\"test_error\"}", await response.Content.ReadAsStringAsync());
         }
 
         private static SecurityKey GetKey()
@@ -285,6 +328,14 @@ namespace Uruk.Server.Tests
             token.AddEvent("test", new JwtObject());
 
             return new JwtWriter().WriteTokenString(token);
+        }
+
+        private class ErrorEventReceiverService : IEventReceiverService
+        {
+            public Task<TokenResponse> TryStoreToken(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+            {
+               return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error") });
+            }
         }
     }
 
