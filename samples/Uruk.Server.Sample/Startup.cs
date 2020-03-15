@@ -9,7 +9,6 @@ using Uruk.Server;
 
 namespace Uruk.ServerSample
 {
-
     public class Startup
     {
         public Startup(IConfiguration configuration)

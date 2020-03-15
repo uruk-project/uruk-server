@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using JsonWebToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
