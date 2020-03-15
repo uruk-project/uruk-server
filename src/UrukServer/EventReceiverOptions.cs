@@ -6,6 +6,6 @@ namespace UrukServer
     {
         public List<EventReceiverRegistration> Registrations { get; } = new List<EventReceiverRegistration>();
 
-        public string Audience { get; set; }
+        public string? Audience { get; set; }
     }
 }

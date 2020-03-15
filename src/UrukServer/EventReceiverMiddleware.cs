@@ -28,7 +28,7 @@ namespace UrukServer
         {
             _next = next;
             _options = options.Value;
-            _registrations = options.Value.Registrations.ToDictionary(v => v.ClientId, v => v.BuildPolicy(_options.Audience));
+            _registrations = options.Value.Registrations.ToDictionary(v => v.ClientId, v => v.BuildPolicy(_options.Audience!));
             _receiver = receiver;
         }
 

@@ -44,9 +44,9 @@ jobs:
       - name: Restore Tool
         if: matrix.is-main
         run: dotnet tool restore
-      - name: Lint
-        if: matrix.is-main
-        run: dotnet format --check --dry-run --verbosity diagnostic
+#      - name: Lint
+#        if: matrix.is-main
+#        run: dotnet format --check --dry-run --verbosity diagnostic
       - name: Build
         run: dotnet build -c Debug
       - name: Test
