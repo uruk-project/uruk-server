@@ -29,18 +29,19 @@ namespace Uruk.Server.Tests
         public void ThrowFriendlyErrorWhenServicesNotRegistered()
         {
             var builder = new WebHostBuilder()
-                .Configure(app =>
+                .Configure(app => app.UseEventReceiver("/events"))
+                .ConfigureServices(services =>
                 {
-                    app.UseEventReceiver("/events");
-                });
+                    services.AddAuthentication();
+                }); ;
 
             var ex = Assert.Throws<InvalidOperationException>(() => new TestServer(builder));
 
-            //Assert.Equal(
-            //    "Unable to find the required services. Please add all the required services by calling " +
-            //    "'IServiceCollection.AddHealthChecks' inside the call to 'ConfigureServices(...)' " +
-            //    "in the application startup code.",
-            //    ex.Message);
+            Assert.Equal(
+                "Unable to find the required services. Please add all the required services by calling " +
+                "'nameof(IServiceCollection).nameof(EventReceiverServiceCollectionExtensions.AddEventReceiver)' " +
+                "inside the call to 'ConfigureServices(...)' in the application startup code.",
+                ex.Message);
         }
 
         [Fact]
@@ -48,7 +49,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
 
             var response = await server.CreateClient().PostAsync("/not-events", new StringContent(CreateSecurityEventToken()));
@@ -61,7 +66,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
 
             var response = await server.CreateClient().GetAsync("/events");
@@ -74,7 +83,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
 
             var response = await server.CreateClient().PostAsync("/events", new StringContent(CreateSecurityEventToken()));
@@ -87,7 +100,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -101,7 +118,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
             content.Headers.ContentType = new MediaTypeHeaderValue("application/secevent+jwt");
@@ -115,7 +136,11 @@ namespace Uruk.Server.Tests
         {
             var builder = new WebHostBuilder()
                 .Configure(app => app.UseEventReceiver("/events"))
-                .ConfigureServices(services => services.AddEventReceiver("uruk"));
+                .ConfigureServices(services =>
+                {
+                    services.AddAuthentication();
+                    services.AddEventReceiver("uruk");
+                });
             var server = new TestServer(builder);
             var message = new HttpRequestMessage(HttpMethod.Post, "/events");
             message.Headers.Accept.ParseAdd("application/xml");
@@ -240,7 +265,7 @@ namespace Uruk.Server.Tests
             Assert.Null(response.Content.Headers.ContentType);
             Assert.Equal(0, response.Content.Headers.ContentLength);
         }
-        
+
         [Fact]
         public async Task ReturnsError()
         {
@@ -277,7 +302,7 @@ namespace Uruk.Server.Tests
             message.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, CreateBearerToken());
             var response = await client.SendAsync(message);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            
+
             Assert.Equal("application/json", response.Content.Headers.ContentType.ToString());
             Assert.Equal("{\"err\":\"test_error\",\"description\":\"Error description\"}", await response.Content.ReadAsStringAsync());
         }
@@ -331,7 +356,7 @@ namespace Uruk.Server.Tests
         {
             public Task<TokenResponse> TryStoreToken(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
             {
-               return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
+                return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
             }
         }
     }

@@ -40,7 +40,6 @@ namespace Uruk.ServerSample
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
             app.UseEventReceiver("/events");
         }
     }
