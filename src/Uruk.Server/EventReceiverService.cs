@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using JsonWebToken;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class EventReceiverService : IEventReceiverService
     {

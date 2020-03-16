@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UrukServer", "src\UrukServer\UrukServer.csproj", "{7C82EA22-9094-4CB5-BCD2-87180B4EA7EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server", "src\Uruk.Server\Uruk.Server.csproj", "{7C82EA22-9094-4CB5-BCD2-87180B4EA7EF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A335BAA4-ECA2-492D-905A-92B9DDE81C4A}"
 EndProject
@@ -13,7 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{1F0B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "perf", "perf", "{12C01AA8-D38F-4F02-BDF3-936ABE0A32FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UrukServer.Tests", "test\UrukServer.Tests\UrukServer.Tests.csproj", "{462F933C-1A9F-4B31-BA0C-9AF408483085}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.Tests", "test\Uruk.Server.Tests\Uruk.Server.Tests.csproj", "{462F933C-1A9F-4B31-BA0C-9AF408483085}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uruk.Server.Sample", "samples\Uruk.Server.Sample\Uruk.Server.Sample.csproj", "{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,10 @@ Global
 		{462F933C-1A9F-4B31-BA0C-9AF408483085}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{462F933C-1A9F-4B31-BA0C-9AF408483085}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{462F933C-1A9F-4B31-BA0C-9AF408483085}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +42,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{7C82EA22-9094-4CB5-BCD2-87180B4EA7EF} = {A335BAA4-ECA2-492D-905A-92B9DDE81C4A}
 		{462F933C-1A9F-4B31-BA0C-9AF408483085} = {D8012577-08EA-4143-AAA1-CA0205ED81F8}
+		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898} = {1F0B121D-B93A-495B-BE49-8B1B00AE97AE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6ED31A21-E84E-4D39-B7D4-D447E1CB04C6}

@@ -1,5 +1,5 @@
 ﻿using System;
-using UrukServer;
+using Uruk.Server;
 
 namespace Microsoft.Extensions.DependencyInjection
 {

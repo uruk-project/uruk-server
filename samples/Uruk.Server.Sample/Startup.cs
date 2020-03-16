@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using JsonWebToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -6,8 +5,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Uruk.Server;
 
-namespace UrukServer
+namespace Uruk.ServerSample
 {
     public class Startup
     {
@@ -29,10 +29,6 @@ namespace UrukServer
                       o.Authority = Configuration["authentication:authority"];
                       o.Audience = Configuration["authentication:audience"];
                   });
-
-            services.AddSingleton<IEventSink, InMemoryEventSink>();
-            services.AddTransient<IEventReceiverService, EventReceiverService>();
-            services.AddHostedService<EventSinkBackgroundService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -44,7 +40,6 @@ namespace UrukServer
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
             app.UseEventReceiver("/events");
         }
     }

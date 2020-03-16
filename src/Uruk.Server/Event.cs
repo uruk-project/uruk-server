@@ -1,7 +1,7 @@
 ﻿using System;
 using JsonWebToken;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     public class Event
     {

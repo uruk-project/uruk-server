@@ -4,7 +4,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace UrukServer
+namespace Uruk.Server
 {
     internal class InMemoryEventSink : IEventSink
     {
