@@ -19,13 +19,13 @@ namespace Uruk.Server
             SignatureAlgorithm = signatureAlgorithm ?? throw new ArgumentNullException(nameof(signatureAlgorithm));
         }
 
-        public string ClientId { get; set; }
+        public string ClientId { get; }
 
-        public string? JwksUri { get; set; }
+        public string? JwksUri { get; }
 
-        public Jwk? Jwk { get; set; }
+        public Jwk? Jwk { get; }
 
-        public SignatureAlgorithm SignatureAlgorithm { get; set; }
+        public SignatureAlgorithm SignatureAlgorithm { get; }
 
         public TokenValidationPolicy BuildPolicy(string audience)
         {
@@ -43,11 +43,6 @@ namespace Uruk.Server
             }
 
             return builder.Build();
-        }
-
-        internal TokenValidationPolicy BuildPolicy(object audience)
-        {
-            throw new NotImplementedException();
         }
     }
 }
