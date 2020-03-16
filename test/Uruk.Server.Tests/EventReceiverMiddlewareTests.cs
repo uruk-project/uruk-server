@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http;
@@ -11,10 +10,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using JsonWebToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
@@ -145,8 +142,8 @@ namespace Uruk.Server.Tests
                         {
                             o.TokenValidationParameters = new TokenValidationParameters()
                             {
-                                ValidIssuer = "issuer.contoso.com",
-                                ValidAudience = "audience.contoso.com",
+                                ValidIssuer = "issuer.example.com",
+                                ValidAudience = "audience.example.com",
                                 IssuerSigningKey = GetKey(),
                                 NameClaimType = "sub"
                             };
@@ -183,8 +180,8 @@ namespace Uruk.Server.Tests
                         {
                             o.TokenValidationParameters = new TokenValidationParameters()
                             {
-                                ValidIssuer = "issuer.contoso.com",
-                                ValidAudience = "audience.contoso.com",
+                                ValidIssuer = "issuer.example.com",
+                                ValidAudience = "audience.example.com",
                                 IssuerSigningKey = GetKey(),
                                 NameClaimType = "sub"
                             };
@@ -223,8 +220,8 @@ namespace Uruk.Server.Tests
                         {
                             o.TokenValidationParameters = new TokenValidationParameters()
                             {
-                                ValidIssuer = "issuer.contoso.com",
-                                ValidAudience = "audience.contoso.com",
+                                ValidIssuer = "issuer.example.com",
+                                ValidAudience = "audience.example.com",
                                 IssuerSigningKey = GetKey(),
                                 NameClaimType = "sub"
                             };
@@ -262,8 +259,8 @@ namespace Uruk.Server.Tests
                         {
                             o.TokenValidationParameters = new TokenValidationParameters()
                             {
-                                ValidIssuer = "issuer.contoso.com",
-                                ValidAudience = "audience.contoso.com",
+                                ValidIssuer = "issuer.example.com",
+                                ValidAudience = "audience.example.com",
                                 IssuerSigningKey = GetKey(),
                                 NameClaimType = "sub"
                             };
@@ -282,7 +279,7 @@ namespace Uruk.Server.Tests
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
             
             Assert.Equal("application/json", response.Content.Headers.ContentType.ToString());
-            Assert.Equal("{\"err\":\"test_error\"}", await response.Content.ReadAsStringAsync());
+            Assert.Equal("{\"err\":\"test_error\",\"description\":\"Error description\"}", await response.Content.ReadAsStringAsync());
         }
 
         private static SecurityKey GetKey()
@@ -302,8 +299,8 @@ namespace Uruk.Server.Tests
             };
 
             var token = new JwtSecurityToken(
-                issuer: "issuer.contoso.com",
-                audience: "audience.contoso.com",
+                issuer: "issuer.example.com",
+                audience: "audience.example.com",
                 claims: claims,
                 expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: creds);
@@ -334,28 +331,8 @@ namespace Uruk.Server.Tests
         {
             public Task<TokenResponse> TryStoreToken(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
             {
-               return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error") });
+               return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
             }
-        }
-    }
-
-    public static class UrukTestServer
-    {
-        public static TestServer Create(Action<IApplicationBuilder> configureApp, Action<IServiceCollection> configureServices = null)
-        {
-            Action<IServiceCollection> defaultConfigureServices = services => { };
-            var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new[]
-                {
-                    new KeyValuePair<string, string>("authentication:authority", "."),
-                    new KeyValuePair<string, string>("authentication:audience", ".")
-                })
-                .Build();
-            var builder = new WebHostBuilder()
-                .UseConfiguration(configuration)
-                .Configure(configureApp)
-                .ConfigureServices(configureServices ?? defaultConfigureServices);
-            return new TestServer(builder);
         }
     }
 }
