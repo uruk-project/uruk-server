@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 
 namespace Uruk.Server
 {
-    public interface IEventSink
+    public interface IAuditTrailSink
     {
-        public bool TryWrite(Event @event);
+        public bool TryWrite(AuditTrailRecord @event);
 
         public Task Flush(CancellationToken cancellationToken);
     }

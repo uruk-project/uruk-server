@@ -20,15 +20,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        # see https://github.com/dotnet/core/blob/master/release-notes/releases-index.json
-        dotnet-version: [3.1]
+        configuration: [Debug, Release]
         include:
-          - dotnet-version: 2.1
-            dotnet-sdk-version: 2.1.804
-          - dotnet-version: 3.1
-            dotnet-sdk-version: 3.1.102
           - os: ubuntu-latest
-            dotnet-version: 3.1
+            configuration: Release
             is-main: true
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -37,10 +32,10 @@ jobs:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
       - uses: actions/checkout@v1
-      - name: Setup .NET Core ${{ matrix.dotnet-version }}
+      - name: Setup .NET Core 3.1
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ matrix.dotnet-sdk-version }}
+          dotnet-version: 3.1.201
       - name: Restore Tool
         if: matrix.is-main
         run: dotnet tool restore
@@ -48,9 +43,9 @@ jobs:
 #        if: matrix.is-main
 #        run: dotnet format --check --dry-run --verbosity diagnostic
       - name: Build
-        run: dotnet build -c Debug
+        run: dotnet build -c ${{ matrix.configuration }}
       - name: Test
-        run: dotnet test -c Debug --no-build --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+        run: dotnet test -c ${{ matrix.configuration }} --no-build --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:

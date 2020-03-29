@@ -6,20 +6,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Uruk.Server
 {
-    internal class InMemoryEventSink : IEventSink
+    internal class DefaultAuditTrailSink : IAuditTrailSink
     {
-        private readonly ILogger<InMemoryEventSink> _logger;
-        private readonly Channel<Event> _channel;
+        private readonly ILogger<DefaultAuditTrailSink> _logger;
+        private readonly Channel<AuditTrailRecord> _channel;
 
-        public InMemoryEventSink(ILogger<InMemoryEventSink> logger)
+        public DefaultAuditTrailSink(ILogger<DefaultAuditTrailSink> logger)
         {
             _logger = logger;
-            _channel = Channel.CreateUnbounded<Event>();
+            _channel = Channel.CreateUnbounded<AuditTrailRecord>();
         }
 
-        public bool TryWrite(Event @event)
+        public bool TryWrite(AuditTrailRecord record)
         {
-            return _channel.Writer.TryWrite(@event);
+            return _channel.Writer.TryWrite(record);
         }
 
         public Task Flush(CancellationToken cancellationToken)

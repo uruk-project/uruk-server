@@ -3,9 +3,9 @@ using JsonWebToken;
 
 namespace Uruk.Server
 {
-    public class Event
+    public class AuditTrailRecord
     {
-        public Event(byte[] raw, SecurityEventToken token)
+        public AuditTrailRecord(byte[] raw, SecurityEventToken token)
         {
             Raw = raw ?? throw new ArgumentNullException(nameof(raw));
             Token = token ?? throw new ArgumentNullException(nameof(token));

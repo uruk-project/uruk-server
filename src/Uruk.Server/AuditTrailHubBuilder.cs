@@ -3,12 +3,12 @@ using Uruk.Server;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
-    internal class EventReceiverBuilder : IEventReceiverBuilder
+    internal class AuditTrailHubBuilder : IAuditTrailHubBuilder
     {
-        public EventReceiverBuilder(IServiceCollection services, string audience)
+        public AuditTrailHubBuilder(IServiceCollection services, string audience)
         {
             Services = services;
-            Services.Configure<EventReceiverOptions>(options =>
+            Services.Configure<AuditTrailHubOptions>(options =>
             {
                 options.Audience = audience;
             });
@@ -16,14 +16,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public IServiceCollection Services { get; }
 
-        public IEventReceiverBuilder Add(EventReceiverRegistration registration)
+        public IAuditTrailHubBuilder Add(AuditTrailHubRegistration registration)
         {
             if (registration == null)
             {
                 throw new ArgumentNullException(nameof(registration));
             }
 
-            Services.Configure<EventReceiverOptions>(options =>
+            Services.Configure<AuditTrailHubOptions>(options =>
             {
                 options.Registrations.Add(registration);
             });

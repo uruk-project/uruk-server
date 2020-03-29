@@ -12,7 +12,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Uruk.Server
 {
-    public class EventReceiverMiddleware
+    public class AuditTrailHubMiddleware
     {
         private static readonly JsonEncodedText errJson = JsonEncodedText.Encode("err");
         private static readonly JsonEncodedText descriptionJson = JsonEncodedText.Encode("description");
@@ -20,16 +20,16 @@ namespace Uruk.Server
         private static readonly JsonEncodedText accessDeniedJson = JsonEncodedText.Encode("access_denied");
 
         private readonly RequestDelegate _next;
-        private readonly EventReceiverOptions _options;
+        private readonly AuditTrailHubOptions _options;
         private readonly Dictionary<string, TokenValidationPolicy> _registrations;
-        private readonly IEventReceiverService _receiver;
+        private readonly IAuditTrailHubService _auditTrailService;
 
-        public EventReceiverMiddleware(RequestDelegate next, IOptions<EventReceiverOptions> options, IEventReceiverService receiver)
+        public AuditTrailHubMiddleware(RequestDelegate next, IOptions<AuditTrailHubOptions> options, IAuditTrailHubService auditTrailService)
         {
             _next = next;
             _options = options.Value;
             _registrations = options.Value.Registrations.ToDictionary(v => v.ClientId, v => v.BuildPolicy(_options.Audience!));
-            _receiver = receiver;
+            _auditTrailService = auditTrailService;
         }
 
         public async Task Invoke(HttpContext context)
@@ -85,7 +85,7 @@ namespace Uruk.Server
             }
 
             var readResult = await request.BodyReader.ReadAsync();
-            var response = await _receiver.TryStoreToken(readResult.Buffer, policy);
+            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer, policy);
             if (response.Succeeded)
             {
                 context.Response.StatusCode = StatusCodes.Status202Accepted;
@@ -113,7 +113,7 @@ namespace Uruk.Server
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
         }
 
-        private Task RefreshPolicies(EventReceiverOptions _options)
+        private Task RefreshPolicies(AuditTrailHubOptions _options)
         {
             // TODO
             return Task.CompletedTask;
