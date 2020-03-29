@@ -18,9 +18,9 @@ using Xunit;
 
 namespace Uruk.Server.Tests
 {
-    public class EventReceiverMiddlewareTests
+    public class AuditTrailHubMiddlewareTests
     {
-        public EventReceiverMiddlewareTests()
+        public AuditTrailHubMiddlewareTests()
         {
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         }
@@ -29,7 +29,7 @@ namespace Uruk.Server.Tests
         public void ThrowFriendlyErrorWhenServicesNotRegistered()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
@@ -48,11 +48,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsNotFoundWhenInvalidPath()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
 
@@ -65,11 +65,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsNotFoundWhenInvalidHttpMethod()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
 
@@ -82,11 +82,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsUnsupportedMediaTypeWhenInvalidMediaType()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
 
@@ -99,11 +99,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsUnsupportedMediaTypeWhenNoMediaType()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
@@ -117,11 +117,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsNotAcceptableWhenNoAccept()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
@@ -135,11 +135,11 @@ namespace Uruk.Server.Tests
         public async Task ReturnsNotAcceptableWhenNoInvalidAccept()
         {
             var builder = new WebHostBuilder()
-                .Configure(app => app.UseEventReceiver("/events"))
+                .Configure(app => app.UseAuditTrailHub("/events"))
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                 });
             var server = new TestServer(builder);
             var message = new HttpRequestMessage(HttpMethod.Post, "/events");
@@ -157,11 +157,11 @@ namespace Uruk.Server.Tests
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
-                    app.UseEventReceiver("/events");
+                    app.UseAuditTrailHub("/events");
                 })
                 .ConfigureServices(services =>
                 {
-                    services.AddEventReceiver("uruk");
+                    services.AddAuditTrailHub("uruk");
                     services.AddAuthentication()
                         .AddJwtBearer(o =>
                         {
@@ -194,12 +194,12 @@ namespace Uruk.Server.Tests
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
-                    app.UseEventReceiver("/events");
+                    app.UseAuditTrailHub("/events");
                 })
                 .ConfigureServices(services =>
                 {
-                    services.AddEventReceiver("uruk")
-                        .Add(new EventReceiverRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
+                    services.AddAuditTrailHub("uruk")
+                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -233,13 +233,13 @@ namespace Uruk.Server.Tests
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
-                    app.UseEventReceiver("/events");
+                    app.UseAuditTrailHub("/events");
                 })
                 .ConfigureServices(services =>
                 {
-                    services.AddEventReceiver("uruk")
-                        .Add(new EventReceiverRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new EventReceiverRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                    services.AddAuditTrailHub("uruk")
+                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -272,13 +272,13 @@ namespace Uruk.Server.Tests
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
-                    app.UseEventReceiver("/events");
+                    app.UseAuditTrailHub("/events");
                 })
                 .ConfigureServices(services =>
                 {
-                    services.AddEventReceiver("uruk")
-                        .Add(new EventReceiverRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new EventReceiverRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                    services.AddAuditTrailHub("uruk")
+                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -290,7 +290,7 @@ namespace Uruk.Server.Tests
                                 NameClaimType = "sub"
                             };
                         });
-                    services.AddTransient<IEventReceiverService, ErrorEventReceiverService>();
+                    services.AddTransient<IAuditTrailHubService, ErrorEventReceiverService>();
                 });
             var server = new TestServer(builder);
             var client = server.CreateClient();
@@ -352,11 +352,11 @@ namespace Uruk.Server.Tests
             return new JwtWriter().WriteTokenString(token);
         }
 
-        private class ErrorEventReceiverService : IEventReceiverService
+        private class ErrorEventReceiverService : IAuditTrailHubService
         {
-            public Task<TokenResponse> TryStoreToken(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
             {
-                return Task.FromResult(new TokenResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
+                return Task.FromResult(new AuditTrailResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
             }
         }
     }

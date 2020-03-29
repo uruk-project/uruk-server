@@ -2,7 +2,7 @@
 
 namespace Uruk.Server
 {
-    public class TokenResponse
+    public class AuditTrailResponse
     {
         public bool Succeeded { get; set; }
 

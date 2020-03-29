@@ -5,13 +5,13 @@ namespace Microsoft.Extensions.DependencyInjection
     /// <summary>
     /// A builder used to register event transmitter.
     /// </summary>
-    public interface IEventReceiverBuilder
+    public interface IAuditTrailHubBuilder
     {
         /// <summary>
-        /// Adds a <see cref="EventReceiverRegistration"/>.
+        /// Adds a <see cref="AuditTrailHubRegistration"/>.
         /// </summary>
-        /// <param name="registration">The <see cref="HealthCheckRegistration"/>.</param>
-        IEventReceiverBuilder Add(EventReceiverRegistration registration);
+        /// <param name="registration">The <see cref="AuditTrailHubRegistration"/>.</param>
+        IAuditTrailHubBuilder Add(AuditTrailHubRegistration registration);
 
         /// <summary>
         /// Gets the <see cref="IServiceCollection"/>.

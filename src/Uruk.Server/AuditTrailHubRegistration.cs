@@ -3,16 +3,16 @@ using JsonWebToken;
 
 namespace Uruk.Server
 {
-    public class EventReceiverRegistration
+    public class AuditTrailHubRegistration
     {
-        public EventReceiverRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, Jwk jwk)
+        public AuditTrailHubRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, Jwk jwk)
         {
             ClientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
             Jwk = jwk ?? throw new ArgumentNullException(nameof(jwk));
             SignatureAlgorithm = signatureAlgorithm ?? throw new ArgumentNullException(nameof(signatureAlgorithm));
         }
 
-        public EventReceiverRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, string jwksUri)
+        public AuditTrailHubRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, string jwksUri)
         {
             ClientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
             JwksUri = jwksUri ?? throw new ArgumentNullException(nameof(jwksUri));

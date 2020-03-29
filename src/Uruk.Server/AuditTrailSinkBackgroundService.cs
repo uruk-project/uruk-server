@@ -4,11 +4,11 @@ using Microsoft.Extensions.Hosting;
 
 namespace Uruk.Server
 {
-    public class EventSinkBackgroundService : BackgroundService
+    public class AuditTrailSinkBackgroundService : BackgroundService
     {
-        private readonly IEventSink _eventSink;
+        private readonly IAuditTrailSink _eventSink;
 
-        public EventSinkBackgroundService(IEventSink eventSink)
+        public AuditTrailSinkBackgroundService(IAuditTrailSink eventSink)
         {
             _eventSink = eventSink;
         }
