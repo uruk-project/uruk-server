@@ -14,27 +14,34 @@ namespace Uruk.Server
 
         private readonly JwtReader _jwtReader;
         private readonly IAuditTrailSink _sink;
+        private readonly IAuditTrailStore _store;
 
-        public AuditTrailHubService(IAuditTrailSink sink)
+        public AuditTrailHubService(IAuditTrailSink sink, IAuditTrailStore store)
         {
             _sink = sink ?? throw new ArgumentNullException(nameof(sink));
+            _store = store ?? throw new ArgumentNullException(nameof(store));
             _jwtReader = new JwtReader();
         }
 
-        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+        public async Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration)
         {
-            var result = _jwtReader.TryReadToken(buffer, policy);
+            var result = _jwtReader.TryReadToken(buffer, registration.Policy);
             if (result.Succedeed)
             {
+                if (await _store.CheckDuplicateAsync(result.Token!.Issuer!, result.Token!.Id!, registration.ClientId))
+                {
+                     return new AuditTrailResponse { Error = invalidRequestJson, Description = "Duplicated token." };
+                }
+
                 var token = result.Token!.AsSecurityEventToken();
 
-                var @event = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token);
+                var record = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token, registration.ClientId);
 
                 // TODO : Detect duplicates
-                if (!_sink.TryWrite(@event))
+                if (!_sink.TryWrite(record))
                 {
                     // throttle ?
-                    return Task.FromResult(new AuditTrailResponse
+                    return (new AuditTrailResponse
                     {
                         Error = JsonEncodedText.Encode("An error occurred when adding the event to the queue.")
                     });
@@ -42,13 +49,13 @@ namespace Uruk.Server
 
                 // TODO : Logs
                 // return new TokenResponse { Error = errJson, Description = "Duplicated token." };
-                return Task.FromResult(new AuditTrailResponse { Succeeded = true });
+                return (new AuditTrailResponse { Succeeded = true });
             }
             else
             {
                 if ((result.Status & TokenValidationStatus.KeyError) == TokenValidationStatus.KeyError)
                 {
-                    return Task.FromResult(new AuditTrailResponse
+                    return (new AuditTrailResponse
                     {
                         Error = invalidKeyJson
                     });
@@ -73,7 +80,7 @@ namespace Uruk.Server
                         _ => null
                     };
 
-                    return Task.FromResult(new AuditTrailResponse
+                    return (new AuditTrailResponse
                     {
                         Error = invalidRequestJson,
                         Description = description

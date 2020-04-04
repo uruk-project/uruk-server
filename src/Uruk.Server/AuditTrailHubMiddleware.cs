@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using JsonWebToken;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
@@ -21,14 +18,12 @@ namespace Uruk.Server
 
         private readonly RequestDelegate _next;
         private readonly AuditTrailHubOptions _options;
-        private readonly Dictionary<string, TokenValidationPolicy> _registrations;
         private readonly IAuditTrailHubService _auditTrailService;
 
         public AuditTrailHubMiddleware(RequestDelegate next, IOptions<AuditTrailHubOptions> options, IAuditTrailHubService auditTrailService)
         {
             _next = next;
             _options = options.Value;
-            _registrations = options.Value.Registrations.ToDictionary(v => v.ClientId, v => v.BuildPolicy(_options.Audience!));
             _auditTrailService = auditTrailService;
         }
 
@@ -43,14 +38,12 @@ namespace Uruk.Server
 
             if (!string.Equals(request.ContentType, "application/secevent+jwt", StringComparison.Ordinal))
             {
-                // TODO : bad content type
                 context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
                 return;
             }
 
             if (!request.Headers.TryGetValue("Accept", out StringValues acceptHeaderValue) || !string.Equals(acceptHeaderValue, "application/json", StringComparison.Ordinal))
             {
-                // TODO : bad accept
                 context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
                 return;
             }
@@ -67,13 +60,12 @@ namespace Uruk.Server
                 return;
             }
 
-            var user = authentication.Principal.Identity.Name ?? "*";
-            if (!_registrations.TryGetValue(user, out var policy))
+            var user = authentication.Principal.Identity.Name!;
+            if (!_options.Registry.TryGet(user, out var registration))
             {
-                await RefreshPolicies(_options);
-                if (!_registrations.TryGetValue(user, out policy))
+                await _options.Registry.Refresh(_options.Audience);
+                if (!_options.Registry.TryGet(user, out registration))
                 {
-                    // TODO : refresh policies 1 time
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
                     using Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
@@ -85,7 +77,7 @@ namespace Uruk.Server
             }
 
             var readResult = await request.BodyReader.ReadAsync();
-            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer, policy);
+            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer, registration);
             if (response.Succeeded)
             {
                 context.Response.StatusCode = StatusCodes.Status202Accepted;
@@ -111,12 +103,6 @@ namespace Uruk.Server
             }
 
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
-        }
-
-        private Task RefreshPolicies(AuditTrailHubOptions _options)
-        {
-            // TODO
-            return Task.CompletedTask;
         }
     }
 }

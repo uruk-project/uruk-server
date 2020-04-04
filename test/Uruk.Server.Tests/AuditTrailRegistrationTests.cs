@@ -42,18 +42,18 @@ namespace Uruk.Server.Tests
             const int ValidateAudience = 0x02;
 
             var reg1 = new AuditTrailHubRegistration("client1", SignatureAlgorithm.HmacSha256, SymmetricJwk.GenerateKey(128));
-            var policy1 = reg1.BuildPolicy("uruk.example.com");
-            Assert.Equal(ValidateSignature | ValidateAudience, policy1.ValidationControl);
-            Assert.Single(policy1.RequiredAudiences, "uruk.example.com");
-            Assert.NotEqual(SignatureValidationPolicy.NoSignature, policy1.SignatureValidationPolicy);
-            Assert.NotEqual(SignatureValidationPolicy.IgnoreSignature, policy1.SignatureValidationPolicy);
+            reg1.ConfigurePolicy("uruk.example.com");
+            Assert.Equal(ValidateSignature | ValidateAudience, reg1.Policy.ValidationControl);
+            Assert.Single(reg1.Policy.RequiredAudiences, "uruk.example.com");
+            Assert.NotEqual(SignatureValidationPolicy.NoSignature, reg1.Policy.SignatureValidationPolicy);
+            Assert.NotEqual(SignatureValidationPolicy.IgnoreSignature, reg1.Policy.SignatureValidationPolicy);
 
             var reg2 = new AuditTrailHubRegistration("client1", SignatureAlgorithm.RsaSha256, "https://demo.identityserver.io/.well-known/openid-configuration/jwks");
-            var policy2 = reg2.BuildPolicy("uruk.example.com");
-            Assert.Equal(ValidateSignature | ValidateAudience, policy2.ValidationControl);
-            Assert.Single(policy1.RequiredAudiences, "uruk.example.com");
-            Assert.NotEqual(SignatureValidationPolicy.NoSignature, policy2.SignatureValidationPolicy);
-            Assert.NotEqual(SignatureValidationPolicy.IgnoreSignature, policy2.SignatureValidationPolicy);
+            reg2.ConfigurePolicy("uruk.example.com");
+            Assert.Equal(ValidateSignature | ValidateAudience, reg2.Policy.ValidationControl);
+            Assert.Single(reg2.Policy.RequiredAudiences, "uruk.example.com");
+            Assert.NotEqual(SignatureValidationPolicy.NoSignature, reg2.Policy.SignatureValidationPolicy);
+            Assert.NotEqual(SignatureValidationPolicy.IgnoreSignature, reg2.Policy.SignatureValidationPolicy);
         }
     }
 }

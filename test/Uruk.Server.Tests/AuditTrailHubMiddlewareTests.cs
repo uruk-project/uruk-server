@@ -199,7 +199,7 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -238,8 +238,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .RegisterClient(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -277,8 +277,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .RegisterClient(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -354,7 +354,7 @@ namespace Uruk.Server.Tests
 
         private class ErrorEventReceiverService : IAuditTrailHubService
         {
-            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration)
             {
                 return Task.FromResult(new AuditTrailResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
             }

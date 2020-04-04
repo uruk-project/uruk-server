@@ -5,18 +5,14 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     internal class AuditTrailHubBuilder : IAuditTrailHubBuilder
     {
-        public AuditTrailHubBuilder(IServiceCollection services, string audience)
+        public AuditTrailHubBuilder(IServiceCollection services)
         {
             Services = services;
-            Services.Configure<AuditTrailHubOptions>(options =>
-            {
-                options.Audience = audience;
-            });
         }
 
         public IServiceCollection Services { get; }
 
-        public IAuditTrailHubBuilder Add(AuditTrailHubRegistration registration)
+        public IAuditTrailHubBuilder RegisterClient(AuditTrailHubRegistration registration)
         {
             if (registration == null)
             {
@@ -25,10 +21,28 @@ namespace Microsoft.Extensions.DependencyInjection
 
             Services.Configure<AuditTrailHubOptions>(options =>
             {
-                options.Registrations.Add(registration);
+                options.Registry.Add(registration);
             });
 
             return this;
+        }
+    }
+
+    public static class AuditTrailHubBuilderExtensions
+    {
+        public static IAuditTrailHubBuilder Add(this IAuditTrailHubBuilder builder, AuditTrailHubRegistration registration)
+        {
+            if (registration == null)
+            {
+                throw new ArgumentNullException(nameof(registration));
+            }
+
+            builder.Services.Configure<AuditTrailHubOptions>(options =>
+            {
+                options.Registry.Add(registration);
+            });
+
+            return builder;
         }
     }
 }

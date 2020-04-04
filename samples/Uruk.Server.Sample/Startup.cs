@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Uruk.Server;
+using Uruk.Server.MongoDB;
 
 namespace Uruk.ServerSample
 {
@@ -20,8 +21,9 @@ namespace Uruk.ServerSample
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuditTrailHub("uruk")
-                .Add(new AuditTrailHubRegistration("*", SignatureAlgorithm.HmacSha256, new SymmetricJwk("R9MyWaEoyiMYViVWo8Fk4TUGWiSoaW6U1nOqXri8ZXU")));
+            services.AddAuditTrailHub("636C69656E745F6964")
+                .RegisterClient(new AuditTrailHubRegistration("Test", SignatureAlgorithm.HmacSha256, new SymmetricJwk("R9MyWaEoyiMYViVWo8Fk4TUGWiSoaW6U1nOqXri8ZXU")))
+                .AddMongoDB();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                   .AddJwtBearer(o =>

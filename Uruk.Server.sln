@@ -15,7 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "perf", "perf", "{12C01AA8-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.Tests", "test\Uruk.Server.Tests\Uruk.Server.Tests.csproj", "{462F933C-1A9F-4B31-BA0C-9AF408483085}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uruk.Server.Sample", "samples\Uruk.Server.Sample\Uruk.Server.Sample.csproj", "{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.Sample", "samples\Uruk.Server.Sample\Uruk.Server.Sample.csproj", "{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uruk.Server.MongoDB", "src\Uruk.Server.MongoDB\Uruk.Server.MongoDB.csproj", "{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +49,7 @@ Global
 		{7C82EA22-9094-4CB5-BCD2-87180B4EA7EF} = {A335BAA4-ECA2-492D-905A-92B9DDE81C4A}
 		{462F933C-1A9F-4B31-BA0C-9AF408483085} = {D8012577-08EA-4143-AAA1-CA0205ED81F8}
 		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898} = {1F0B121D-B93A-495B-BE49-8B1B00AE97AE}
+		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F} = {A335BAA4-ECA2-492D-905A-92B9DDE81C4A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6ED31A21-E84E-4D39-B7D4-D447E1CB04C6}

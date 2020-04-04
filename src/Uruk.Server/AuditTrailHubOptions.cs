@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace Uruk.Server
 {
     public class AuditTrailHubOptions
     {
-        public List<AuditTrailHubRegistration> Registrations { get; } = new List<AuditTrailHubRegistration>();
+        public AuditTrailHubRegistry Registry { get; } = new AuditTrailHubRegistry();
 
-        public string? Audience { get; set; }
+        [Required]
+        public string Audience { get; set; }
     }
 }

@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JsonWebToken" Version="1.1.0" />
-    <PackageReference Include="JsonWebToken.SecurityEventTokens" Version="1.1.0" />
+    <PackageReference Include="JsonWebToken" Version="1.2.0" />
+    <PackageReference Include="JsonWebToken.SecurityEventTokens" Version="1.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />

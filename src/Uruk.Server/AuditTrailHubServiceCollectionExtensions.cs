@@ -23,9 +23,20 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IAuditTrailHubBuilder AddAuditTrailHub(this IServiceCollection services, string audience)
         {
             services.TryAddSingleton<IAuditTrailHubService, AuditTrailHubService>();
-            services.AddHostedService<AuditTrailSinkBackgroundService>();
+            services.AddHostedService<AuditTrailStorageBackgroundService>();
             services.TryAddSingleton<IAuditTrailSink, DefaultAuditTrailSink>();
-            return new AuditTrailHubBuilder(services, audience);
+            //services.TryAddSingleton<IAuditTrailStore, DefaultAuditTrailStore>();
+            services.AddOptions<AuditTrailHubOptions>()
+                .Configure(options =>
+                {
+                    options.Audience = audience;
+                })
+                .PostConfigure(options =>
+                {
+                    options.Registry.Configure(options.Audience);
+                });
+
+            return new AuditTrailHubBuilder(services);
         }
     }
 }
