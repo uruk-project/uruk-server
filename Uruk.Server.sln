@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.Tests", "test\U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.Sample", "samples\Uruk.Server.Sample\Uruk.Server.Sample.csproj", "{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uruk.Server.MongoDB", "src\Uruk.Server.MongoDB\Uruk.Server.MongoDB.csproj", "{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.MongoDB", "src\Uruk.Server.MongoDB\Uruk.Server.MongoDB.csproj", "{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Uruk.Server.MongoDBSample", "samples\Uruk.Server.MongoDBSample\Uruk.Server.MongoDBSample.csproj", "{28AB449E-0054-436A-BDC4-4AF9D9832947}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28AB449E-0054-436A-BDC4-4AF9D9832947}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28AB449E-0054-436A-BDC4-4AF9D9832947}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28AB449E-0054-436A-BDC4-4AF9D9832947}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28AB449E-0054-436A-BDC4-4AF9D9832947}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +56,7 @@ Global
 		{462F933C-1A9F-4B31-BA0C-9AF408483085} = {D8012577-08EA-4143-AAA1-CA0205ED81F8}
 		{6DBBFED9-DF2A-4056-9C0B-68C0DFE5A898} = {1F0B121D-B93A-495B-BE49-8B1B00AE97AE}
 		{F6AA48AF-35EA-44E4-AE18-84D7FDCD8E0F} = {A335BAA4-ECA2-492D-905A-92B9DDE81C4A}
+		{28AB449E-0054-436A-BDC4-4AF9D9832947} = {1F0B121D-B93A-495B-BE49-8B1B00AE97AE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6ED31A21-E84E-4D39-B7D4-D447E1CB04C6}

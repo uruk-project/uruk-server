@@ -51,20 +51,22 @@ namespace Uruk.Server
             var authentication = await context.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
             if (!authentication.Succeeded || !authentication.Principal.Identity.IsAuthenticated)
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/json";
-                using Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
-                writer.WriteStartObject();
-                writer.WriteString(errJson, authenticationFailedJson);
-                writer.WriteEndObject();
+                AuthenticationFailed(context);
                 return;
             }
 
-            var user = authentication.Principal.Identity.Name!;
-            if (!_options.Registry.TryGet(user, out var registration))
+            var clientIdClaim = authentication.Principal.FindFirst("client_id");
+            if (clientIdClaim is null || clientIdClaim.Value is null)
+            {
+                AuthenticationFailed(context);
+                return;
+            }
+
+            var clientId = clientIdClaim.Value;
+            if (!_options.Registry.TryGet(clientId, out var registration))
             {
                 await _options.Registry.Refresh(_options.Audience);
-                if (!_options.Registry.TryGet(user, out registration))
+                if (!_options.Registry.TryGet(clientId, out registration))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
@@ -103,6 +105,16 @@ namespace Uruk.Server
             }
 
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
+        }
+
+        private static void AuthenticationFailed(HttpContext context)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
+            writer.WriteStartObject();
+            writer.WriteString(errJson, authenticationFailedJson);
+            writer.WriteEndObject();
         }
     }
 }

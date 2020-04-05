@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using JsonWebToken;
 
@@ -15,50 +16,47 @@ namespace Uruk.Server
         private readonly JwtReader _jwtReader;
         private readonly IAuditTrailSink _sink;
         private readonly IAuditTrailStore _store;
+        private readonly IDuplicateStore? _duplicateStore;
 
-        public AuditTrailHubService(IAuditTrailSink sink, IAuditTrailStore store)
+        public AuditTrailHubService(IAuditTrailSink sink, IAuditTrailStore store, IDuplicateStore? duplicateStore = null)
         {
             _sink = sink ?? throw new ArgumentNullException(nameof(sink));
             _store = store ?? throw new ArgumentNullException(nameof(store));
+            _duplicateStore = duplicateStore;
             _jwtReader = new JwtReader();
         }
 
-        public async Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration)
+        public async Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
         {
             var result = _jwtReader.TryReadToken(buffer, registration.Policy);
             if (result.Succedeed)
             {
-                if (await _store.CheckDuplicateAsync(result.Token!.Issuer!, result.Token!.Id!, registration.ClientId))
-                {
-                     return new AuditTrailResponse { Error = invalidRequestJson, Description = "Duplicated token." };
-                }
-
                 var token = result.Token!.AsSecurityEventToken();
 
                 var record = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token, registration.ClientId);
 
-                // TODO : Detect duplicates
-                if (!_sink.TryWrite(record))
+                if (_duplicateStore == null || await _duplicateStore.TryAddAsync(record))
                 {
-                    // throttle ?
-                    return (new AuditTrailResponse
+                    if (!_sink.TryWrite(record))
                     {
-                        Error = JsonEncodedText.Encode("An error occurred when adding the event to the queue.")
-                    });
+                        // throttle ?
+                        return new AuditTrailResponse
+                        {
+                            Error = JsonEncodedText.Encode("An error occurred when adding the event to the queue.")
+                        };
+                    }
                 }
 
-                // TODO : Logs
-                // return new TokenResponse { Error = errJson, Description = "Duplicated token." };
-                return (new AuditTrailResponse { Succeeded = true });
+                return new AuditTrailResponse { Succeeded = true };
             }
             else
             {
                 if ((result.Status & TokenValidationStatus.KeyError) == TokenValidationStatus.KeyError)
                 {
-                    return (new AuditTrailResponse
+                    return new AuditTrailResponse
                     {
                         Error = invalidKeyJson
-                    });
+                    };
                 }
                 else
                 {
@@ -80,11 +78,11 @@ namespace Uruk.Server
                         _ => null
                     };
 
-                    return (new AuditTrailResponse
+                    return new AuditTrailResponse
                     {
                         Error = invalidRequestJson,
                         Description = description
-                    });
+                    };
                 }
             }
         }

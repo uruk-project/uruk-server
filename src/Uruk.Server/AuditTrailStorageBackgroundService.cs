@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,9 +24,7 @@ namespace Uruk.Server
             {
                 while (_sink.TryRead(out var record))
                 {
-                    await _store.StoreAsync(record);
-                    _logger.LogInformation($"'{record.Token.Payload!.Jti}' has been recorded");
-                    // TODO: Merkle tree
+                    await _store.StoreAsync(record, cancellationToken);
                 }
             }
         }

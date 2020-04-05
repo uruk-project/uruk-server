@@ -25,7 +25,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IAuditTrailHubService, AuditTrailHubService>();
             services.AddHostedService<AuditTrailStorageBackgroundService>();
             services.TryAddSingleton<IAuditTrailSink, DefaultAuditTrailSink>();
-            //services.TryAddSingleton<IAuditTrailStore, DefaultAuditTrailStore>();
             services.AddOptions<AuditTrailHubOptions>()
                 .Configure(options =>
                 {
@@ -37,6 +36,17 @@ namespace Microsoft.Extensions.DependencyInjection
                 });
 
             return new AuditTrailHubBuilder(services);
+        }
+
+        public static IAuditTrailHubBuilder AddFileSystemStorage(this IAuditTrailHubBuilder builder, bool verifyDuplicates = false)
+        {
+            builder.Services.TryAddSingleton<IAuditTrailStore, FileSystemAuditTrailStore>();
+            if (verifyDuplicates)
+            {
+                builder.Services.TryAddSingleton<IDuplicateStore, FileSystemDuplicateStore>();
+            }
+
+            return builder;
         }
     }
 }
