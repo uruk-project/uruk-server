@@ -7,12 +7,12 @@ namespace Uruk.Server.MongoDB
 {
     public static class AuditTrailHubBuilderExtensions
     {
-        public static IAuditTrailHubBuilder AddMongoDB(this IAuditTrailHubBuilder builder, string connectionString, bool verifyDuplicates = false)
+        public static IAuditTrailHubBuilder AddMongoDB(this IAuditTrailHubBuilder builder, string connectionString)
         {
-            return builder.AddMongoDB(MongoClientSettings.FromConnectionString(connectionString), verifyDuplicates);
+            return builder.AddMongoDB(MongoClientSettings.FromConnectionString(connectionString));
         } 
         
-        public static IAuditTrailHubBuilder AddMongoDB(this IAuditTrailHubBuilder builder, MongoClientSettings settings, bool verifyDuplicates = false)
+        public static IAuditTrailHubBuilder AddMongoDB(this IAuditTrailHubBuilder builder, MongoClientSettings settings)
         {
             builder.Services.TryAddSingleton<IAuditTrailStore, MongoDBAuditTrailStore>();
             builder.Services.AddOptions<MongoDBStoreOptions>();
@@ -22,10 +22,6 @@ namespace Uruk.Server.MongoDB
 
             var conventionPack = new ConventionPack { new CamelCaseElementNameConvention() };
             ConventionRegistry.Register("camelCase", conventionPack, t => t.Namespace?.StartsWith("Uruk") ?? false);
-            if (verifyDuplicates)
-            {
-                builder.Services.TryAddSingleton<IDuplicateStore, MongoDBDuplicateStore>();
-            }
 
             return builder;
         }

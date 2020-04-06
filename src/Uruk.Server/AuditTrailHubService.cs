@@ -15,48 +15,39 @@ namespace Uruk.Server
 
         private readonly JwtReader _jwtReader;
         private readonly IAuditTrailSink _sink;
-        private readonly IAuditTrailStore _store;
-        private readonly IDuplicateStore? _duplicateStore;
 
-        public AuditTrailHubService(IAuditTrailSink sink, IAuditTrailStore store, IDuplicateStore? duplicateStore = null)
+        public AuditTrailHubService(IAuditTrailSink sink)
         {
             _sink = sink ?? throw new ArgumentNullException(nameof(sink));
-            _store = store ?? throw new ArgumentNullException(nameof(store));
-            _duplicateStore = duplicateStore;
             _jwtReader = new JwtReader();
         }
 
-        public async Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
+        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
         {
             var result = _jwtReader.TryReadToken(buffer, registration.Policy);
             if (result.Succedeed)
             {
                 var token = result.Token!.AsSecurityEventToken();
-
                 var record = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token, registration.ClientId);
-
-                if (_duplicateStore == null || await _duplicateStore.TryAddAsync(record))
+                if (!_sink.TryWrite(record))
                 {
-                    if (!_sink.TryWrite(record))
+                    // throttle ?
+                    return Task.FromResult(new AuditTrailResponse
                     {
-                        // throttle ?
-                        return new AuditTrailResponse
-                        {
-                            Error = JsonEncodedText.Encode("An error occurred when adding the event to the queue.")
-                        };
-                    }
+                        Error = JsonEncodedText.Encode("An error occurred when adding the event to the queue.")
+                    });
                 }
 
-                return new AuditTrailResponse { Succeeded = true };
+                return Task.FromResult(new AuditTrailResponse { Succeeded = true });
             }
             else
             {
                 if ((result.Status & TokenValidationStatus.KeyError) == TokenValidationStatus.KeyError)
                 {
-                    return new AuditTrailResponse
+                    return Task.FromResult(new AuditTrailResponse
                     {
                         Error = invalidKeyJson
-                    };
+                    });
                 }
                 else
                 {
@@ -78,11 +69,11 @@ namespace Uruk.Server
                         _ => null
                     };
 
-                    return new AuditTrailResponse
+                    return Task.FromResult(new AuditTrailResponse
                     {
                         Error = invalidRequestJson,
                         Description = description
-                    };
+                    });
                 }
             }
         }

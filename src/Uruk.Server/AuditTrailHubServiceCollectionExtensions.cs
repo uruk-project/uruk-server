@@ -38,14 +38,10 @@ namespace Microsoft.Extensions.DependencyInjection
             return new AuditTrailHubBuilder(services);
         }
 
-        public static IAuditTrailHubBuilder AddFileSystemStorage(this IAuditTrailHubBuilder builder, bool verifyDuplicates = false)
+        public static IAuditTrailHubBuilder AddFileSystemStorage(this IAuditTrailHubBuilder builder)
         {
             builder.Services.TryAddSingleton<IAuditTrailStore, FileSystemAuditTrailStore>();
-            if (verifyDuplicates)
-            {
-                builder.Services.TryAddSingleton<IDuplicateStore, FileSystemDuplicateStore>();
-            }
-
+    
             return builder;
         }
     }

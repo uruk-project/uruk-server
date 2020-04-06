@@ -74,6 +74,7 @@ namespace Uruk.Server
                     writer.WriteStartObject();
                     writer.WriteString(errJson, accessDeniedJson);
                     writer.WriteEndObject();
+                    writer.Flush();
                     return;
                 }
             }
@@ -102,6 +103,7 @@ namespace Uruk.Server
                 }
 
                 writer.WriteEndObject();
+                writer.Flush();
             }
 
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
@@ -115,6 +117,7 @@ namespace Uruk.Server
             writer.WriteStartObject();
             writer.WriteString(errJson, authenticationFailedJson);
             writer.WriteEndObject();
+            writer.Flush();
         }
     }
 }
