@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a <see cref="AuditTrailHubRegistration"/>.
         /// </summary>
         /// <param name="registration">The <see cref="AuditTrailHubRegistration"/>.</param>
-        IAuditTrailHubBuilder Add(AuditTrailHubRegistration registration);
+        IAuditTrailHubBuilder RegisterClient(AuditTrailHubRegistration registration);
 
         /// <summary>
         /// Gets the <see cref="IServiceCollection"/>.

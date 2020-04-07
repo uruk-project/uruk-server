@@ -16,8 +16,9 @@ namespace Uruk.Server.Tests
         public async Task TryStoreToken_ValidToken_SinkOk_ReturnsSuccess()
         {
             var service = new AuditTrailHubService(new TestEventSink(response: true));
+            var registration = CreateRegistration();
 
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), TokenValidationPolicy.NoValidation);
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), registration);
 
             Assert.True(response.Succeeded);
             Assert.True(response.Error.EncodedUtf8Bytes.IsEmpty);
@@ -28,8 +29,9 @@ namespace Uruk.Server.Tests
         public async Task TryStoreToken_ValidToken_SinkDown_ReturnsErrorResponse()
         {
             var service = new AuditTrailHubService(new TestEventSink(response: false));
+            var registration = CreateRegistration(Jwk.Empty);
 
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), TokenValidationPolicy.NoValidation);
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), registration);
 
             Assert.False(response.Succeeded);
             Assert.False(response.Error.EncodedUtf8Bytes.IsEmpty);
@@ -40,8 +42,8 @@ namespace Uruk.Server.Tests
         public async Task TryStoreToken_InvalidRequest_ReturnsInvalidRequest()
         {
             var service = new AuditTrailHubService(new TestEventSink(response: false));
-            var policy = new TokenValidationPolicyBuilder().AcceptUnsecureToken().RequireAudience("fake").Build();
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(new byte[0]), policy);
+            var registration = CreateRegistration();
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(new byte[0]), registration);
 
             Assert.False(response.Succeeded);
             Assert.Equal(JsonEncodedText.Encode("invalid_request"), response.Error);
@@ -53,13 +55,20 @@ namespace Uruk.Server.Tests
         {
             var service = new AuditTrailHubService(new TestEventSink(response: false)); ;
             var key = new SymmetricJwk(new string('b', 128));
+            var registration = CreateRegistration(key);
             key.Kid = "bad key";
-            var policy = new TokenValidationPolicyBuilder().RequireSignature(key, SignatureAlgorithm.HmacSha256).Build();
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), policy);
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), registration);
 
             Assert.False(response.Succeeded);
             Assert.Equal(JsonEncodedText.Encode("invalid_key"), response.Error);
             Assert.Null(response.Description);
+        }
+
+        private static AuditTrailHubRegistration CreateRegistration(Jwk? key = null)
+        {
+            var registration = new AuditTrailHubRegistration("client_id", SignatureAlgorithm.None, key ?? SymmetricJwk.Empty);
+            registration.ConfigurePolicy("636C69656E745F6964");
+            return registration;
         }
 
         private class TestEventSink : IAuditTrailSink
@@ -71,14 +80,25 @@ namespace Uruk.Server.Tests
                 _response = response;
             }
 
-            public Task Flush(CancellationToken cancellationToken)
+            public Task StopAsync(CancellationToken cancellationToken)
             {
                 return Task.CompletedTask;
             }
 
-            public bool TryWrite(AuditTrailRecord @event)
+            public bool TryRead(out AuditTrailRecord token)
+            {
+                token = default;
+                return _response;
+            }
+
+            public bool TryWrite(AuditTrailRecord token)
             {
                 return _response;
+            }
+
+            public  ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken)
+            {
+                return new ValueTask<bool>(Task.FromResult(_response));
             }
         }
     }

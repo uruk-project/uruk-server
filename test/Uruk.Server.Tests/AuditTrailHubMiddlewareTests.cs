@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using JsonWebToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,7 +53,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
 
@@ -69,7 +71,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
 
@@ -86,7 +89,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
 
@@ -103,7 +107,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
@@ -121,7 +126,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
             var content = new StringContent(CreateSecurityEventToken());
@@ -139,7 +145,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuthentication();
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                 });
             var server = new TestServer(builder);
             var message = new HttpRequestMessage(HttpMethod.Post, "/events");
@@ -161,7 +168,8 @@ namespace Uruk.Server.Tests
                 })
                 .ConfigureServices(services =>
                 {
-                    services.AddAuditTrailHub("uruk");
+                    services.AddAuditTrailHub("uruk")
+                        .AddFileSystemStorage();
                     services.AddAuthentication()
                         .AddJwtBearer(o =>
                         {
@@ -199,7 +207,8 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .AddFileSystemStorage()
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -238,8 +247,9 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .AddFileSystemStorage()
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .RegisterClient(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -277,8 +287,9 @@ namespace Uruk.Server.Tests
                 .ConfigureServices(services =>
                 {
                     services.AddAuditTrailHub("uruk")
-                        .Add(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
-                        .Add(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
+                        .AddFileSystemStorage()
+                        .RegisterClient(new AuditTrailHubRegistration("bad_user", SignatureAlgorithm.HmacSha256, GetJwk()))
+                        .RegisterClient(new AuditTrailHubRegistration("Bob", SignatureAlgorithm.HmacSha256, GetJwk()));
                     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(o =>
                         {
@@ -320,7 +331,8 @@ namespace Uruk.Server.Tests
 
             var claims = new[]
             {
-                new Claim("sub", "Bob")
+                new Claim("sub", "Bob"),
+                new Claim("client_id", "Bob")
             };
 
             var token = new JwtSecurityToken(
@@ -354,7 +366,7 @@ namespace Uruk.Server.Tests
 
         private class ErrorEventReceiverService : IAuditTrailHubService
         {
-            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new AuditTrailResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
             }

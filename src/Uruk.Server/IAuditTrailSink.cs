@@ -5,8 +5,12 @@ namespace Uruk.Server
 {
     public interface IAuditTrailSink
     {
-        public bool TryWrite(AuditTrailRecord @event);
+        public bool TryWrite(AuditTrailRecord token);
 
-        public Task Flush(CancellationToken cancellationToken);
+        public Task StopAsync(CancellationToken cancellationToken);
+
+        public ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken);
+
+        public bool TryRead(out AuditTrailRecord token);
     }
 }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Uruk.Server.Sample
+namespace Uruk.Server.MongoDBSample
 {
     public class Program
     {

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using JsonWebToken;
 
@@ -21,17 +22,14 @@ namespace Uruk.Server
             _jwtReader = new JwtReader();
         }
 
-        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, TokenValidationPolicy policy)
+        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
         {
-            var result = _jwtReader.TryReadToken(buffer, policy);
+            var result = _jwtReader.TryReadToken(buffer, registration.Policy);
             if (result.Succedeed)
             {
                 var token = result.Token!.AsSecurityEventToken();
-
-                var @event = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token);
-
-                // TODO : Detect duplicates
-                if (!_sink.TryWrite(@event))
+                var record = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token, registration.ClientId);
+                if (!_sink.TryWrite(record))
                 {
                     // throttle ?
                     return Task.FromResult(new AuditTrailResponse
@@ -40,8 +38,6 @@ namespace Uruk.Server
                     });
                 }
 
-                // TODO : Logs
-                // return new TokenResponse { Error = errJson, Description = "Duplicated token." };
                 return Task.FromResult(new AuditTrailResponse { Succeeded = true });
             }
             else
