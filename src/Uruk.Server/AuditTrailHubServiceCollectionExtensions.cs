@@ -26,13 +26,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddHostedService<AuditTrailStorageBackgroundService>();
             services.TryAddSingleton<IAuditTrailSink, DefaultAuditTrailSink>();
             services.AddOptions<AuditTrailHubOptions>()
-                .Configure(options =>
-                {
-                    options.Audience = audience;
-                })
                 .PostConfigure(options =>
                 {
-                    options.Registry.Configure(options.Audience);
+                    options.Registry.Configure(audience);
                 });
 
             return new AuditTrailHubBuilder(services);

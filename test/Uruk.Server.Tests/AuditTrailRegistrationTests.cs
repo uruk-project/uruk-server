@@ -9,13 +9,13 @@ namespace Uruk.Server.Tests
         [Fact]
         public void Ctor_ThrowException()
         {
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration(null, SignatureAlgorithm.HmacSha256, SymmetricJwk.GenerateKey(128)));
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", null, SymmetricJwk.GenerateKey(128)));
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", SignatureAlgorithm.HmacSha256, (Jwk)null));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration(null!, SignatureAlgorithm.HmacSha256, SymmetricJwk.GenerateKey(128)));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", null!, SymmetricJwk.GenerateKey(128)));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", SignatureAlgorithm.HmacSha256, (Jwk)null!));
 
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration(null, SignatureAlgorithm.HmacSha256, "https://demo.identityserver.io/.well-known/openid-configuration/jwks"));
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", null, "https://demo.identityserver.io/.well-known/openid-configuration/jwks"));
-            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", SignatureAlgorithm.HmacSha256, (string)null));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration(null!, SignatureAlgorithm.HmacSha256, "https://demo.identityserver.io/.well-known/openid-configuration/jwks"));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", null!, "https://demo.identityserver.io/.well-known/openid-configuration/jwks"));
+            Assert.Throws<ArgumentNullException>(() => new AuditTrailHubRegistration("client1", SignatureAlgorithm.HmacSha256, (string)null!));
         }
 
         [Fact]

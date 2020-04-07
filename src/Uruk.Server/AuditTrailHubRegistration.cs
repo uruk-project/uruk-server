@@ -11,6 +11,7 @@ namespace Uruk.Server
     {
         private readonly List<AuditTrailHubRegistration> _registrations = new List<AuditTrailHubRegistration>();
         private readonly Dictionary<string, AuditTrailHubRegistration> _registrationLookup = new Dictionary<string, AuditTrailHubRegistration>();
+        private string? _audience;
 
         public void Add(AuditTrailHubRegistration registration)
             => _registrations.Add(registration);
@@ -18,8 +19,9 @@ namespace Uruk.Server
         public bool TryGet(string key, [NotNullWhen(true)] out AuditTrailHubRegistration? registration)
             => _registrationLookup.TryGetValue(key, out registration);
 
-        public void Configure(string audience)
+        public void Configure()
         {
+            var audience = _audience ?? throw new InvalidOperationException($"You must call the method '{nameof(Configure)}' with the 'audience' parameter before calling this override.");
             _registrationLookup.Clear();
             for (int i = 0; i < _registrations.Count; i++)
             {
@@ -29,10 +31,14 @@ namespace Uruk.Server
             }
         }
 
-        public Task Refresh(string audience)
+        public void Configure(string audience)
         {
-            Configure(audience);
-            return Task.CompletedTask;
+            _audience = audience ?? throw new ArgumentNullException(nameof(audience));
+        }
+
+        public void Refresh()
+        {
+            Configure();
         }
 
         public IEnumerator<AuditTrailHubRegistration> GetEnumerator()

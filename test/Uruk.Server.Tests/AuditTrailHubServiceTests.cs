@@ -87,7 +87,7 @@ namespace Uruk.Server.Tests
 
             public bool TryRead(out AuditTrailRecord token)
             {
-                token = default;
+                token = default!;
                 return _response;
             }
 

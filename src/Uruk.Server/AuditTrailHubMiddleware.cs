@@ -65,17 +65,25 @@ namespace Uruk.Server
             var clientId = clientIdClaim.Value;
             if (!_options.Registry.TryGet(clientId, out var registration))
             {
-                await _options.Registry.Refresh(_options.Audience);
+                _options.Registry.Refresh();
                 if (!_options.Registry.TryGet(clientId, out registration))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
-                    using Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
-                    writer.WriteStartObject();
-                    writer.WriteString(errJson, accessDeniedJson);
-                    writer.WriteEndObject();
-                    writer.Flush();
-                    return;
+                    ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
+                    try
+                    {
+                        var writer = reusableWriter.GetJsonWriter();
+                        writer.WriteStartObject();
+                        writer.WriteString(errJson, accessDeniedJson);
+                        writer.WriteEndObject();
+                        writer.Flush();
+                        return;
+                    }
+                    finally
+                    {
+                        ReusableUtf8JsonWriter.Return(reusableWriter);
+                    }
                 }
             }
 
@@ -89,21 +97,29 @@ namespace Uruk.Server
             {
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
+
                 // invalid_request
                 // invalid_key
                 // authentication_failed
-
-                using Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
-                writer.WriteStartObject();
-
-                writer.WriteString(errJson, response.Error);
-                if (response.Description != null)
+                ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
+                try
                 {
-                    writer.WriteString(descriptionJson, response.Description);
-                }
+                    var writer = reusableWriter.GetJsonWriter();
+                    writer.WriteStartObject();
 
-                writer.WriteEndObject();
-                writer.Flush();
+                    writer.WriteString(errJson, response.Error);
+                    if (response.Description != null)
+                    {
+                        writer.WriteString(descriptionJson, response.Description);
+                    }
+
+                    writer.WriteEndObject();
+                    writer.Flush();
+                }
+                finally
+                {
+                    ReusableUtf8JsonWriter.Return(reusableWriter);
+                }
             }
 
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
@@ -113,11 +129,19 @@ namespace Uruk.Server
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
-            Utf8JsonWriter writer = new Utf8JsonWriter(context.Response.BodyWriter);
-            writer.WriteStartObject();
-            writer.WriteString(errJson, authenticationFailedJson);
-            writer.WriteEndObject();
-            writer.Flush();
+            ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
+            try
+            {
+                var writer = reusableWriter.GetJsonWriter();
+                writer.WriteStartObject();
+                writer.WriteString(errJson, authenticationFailedJson);
+                writer.WriteEndObject();
+                writer.Flush();
+            }
+            finally
+            {
+                ReusableUtf8JsonWriter.Return(reusableWriter);
+            }
         }
     }
 }
