@@ -2,7 +2,6 @@
 {
     public interface IMerkleTree
     {
-        byte[] Append(byte[] hash);
-        //MerkleTree Build();
+        MerkleProof Append(byte[] hash);
     }
 }

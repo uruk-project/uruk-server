@@ -8,7 +8,6 @@ using JsonWebToken;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
 namespace Uruk.Server.MongoDB
@@ -57,18 +56,17 @@ namespace Uruk.Server.MongoDB
         {
             var hash = new byte[Sha256.Shared.HashSize];
             ComputeHash(record.Raw, hash);
-            var block = new AuditTrailBlock
-            {
-                Iss = record.Issuer,
-                Jti = record.Token.Payload!.Jti!,
-                Iat = record.Token.Payload.Iat!.Value,
-                Aud = record.Token.Payload.Aud,
-                Txn = record.Token.TransactionNumber,
-                Toe = record.Token.Payload.TryGetValue(SetClaims.ToeUtf8, out var toe) ? (long?)toe.Value : default,
-                Events = record.Token.Events,
-                Raw = record.Raw,
-                Hash = hash
-            };
+            var block = new AuditTrailBlock(
+                 record.Issuer,
+                 record.Token.Payload!.Jti!,
+                 record.Token.Payload.Iat!.Value,
+                 record.Token.Payload.Aud,
+                 record.Token.TransactionNumber,
+                 record.Token.Payload.TryGetValue(SetClaims.ToeUtf8, out var toe) ? (long?)toe.Value : default,
+                record.Token.Events,
+                record.Raw,
+                 hash
+            );
 
             using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
             try
@@ -116,56 +114,6 @@ namespace Uruk.Server.MongoDB
             jsonWriter.WriteEndObject();
             jsonWriter.Flush();
             return BsonDocument.Parse(Encoding.UTF8.GetString(bufferWriter.WrittenSpan));
-        }
-
-        private class AuditTrailBlock
-        {
-            [BsonRequired]
-            [BsonElement("iss")]
-            public string Iss { get; set; }
-
-            [BsonRequired]
-            [BsonElement("jti")]
-            public string Jti { get; set; }
-
-            [BsonRequired]
-            [BsonElement("iat")]
-            public long Iat { get; set; }
-
-            [BsonElement("aud")]
-            [BsonIgnoreIfNull]
-            public string[] Aud { get; set; }
-
-            [BsonElement("txn")]
-            [BsonIgnoreIfNull]
-            public string? Txn { get; set; }
-
-            [BsonElement("toe")]
-            [BsonIgnoreIfNull]
-            public long? Toe { get; set; }
-
-            [BsonRequired]
-            [BsonElement("raw")]
-            public byte[] Raw { get; set; }
-
-            [BsonRequired]
-            [BsonElement("events")]
-            public JwtObject Events { get; set; }
-
-            [BsonRequired]
-            [BsonElement("hash")]
-            public byte[] Hash { get; set; }
-        }
-
-        private class Keyring
-        {
-            [BsonRequired]
-            [BsonElement("iss")]
-            public string Iss { get; set; }
-
-            [BsonRequired]
-            [BsonElement("keys")]
-            public BsonDocument Keys { get; set; }
         }
     }
 }

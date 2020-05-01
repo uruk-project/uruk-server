@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Uruk.Server.MongoDB
 {
-    public static class AuditTrailHubBuilderExtensions
+    public static class MongoDBAuditTrailHubBuilderExtensions
     {
         public static IAuditTrailHubBuilder AddMongoDB(this IAuditTrailHubBuilder builder, string connectionString)
         {
@@ -24,10 +24,27 @@ namespace Uruk.Server.MongoDB
             var conventionPack = new ConventionPack { new CamelCaseElementNameConvention() };
             ConventionRegistry.Register("camelCase", conventionPack, t => t.Namespace?.StartsWith("Uruk") ?? false);
 
+            BsonClassMap.RegisterClassMap<AuditTrailBlock>(cm =>
+            {
+                cm.AutoMap();
+                cm.MapCreator(b => new AuditTrailBlock(b.Iss, b.Jti, b.Iat, b.Aud, b.Txn, b.Toe, b.Events, b.Raw, b.Hash));
+            });
+            BsonClassMap.RegisterClassMap<Keyring>(cm =>
+            {
+                cm.AutoMap();
+                cm.MapCreator(k => new Keyring(k.Iss, k.Keys));
+            });
+
+
             BsonClassMap.RegisterClassMap<MerkleNode>(cm =>
             {
                 cm.AutoMap();
-                cm.MapCreator(n => new MerkleNode(n.Left, n.Right, n.Level, n.Hash));
+                cm.MapCreator(n => new MerkleNode(n.Children, n.Level, n.Hash, n.IsFull));
+            });
+            BsonClassMap.RegisterClassMap<MerkleRoot>(cm =>
+            {
+                cm.AutoMap();
+                cm.MapCreator(r => new MerkleRoot(r.Id, r.NodeId, r.Level, r.Hash));
             });
 
             return builder;
