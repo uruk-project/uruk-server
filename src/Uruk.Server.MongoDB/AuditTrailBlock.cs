@@ -6,7 +6,7 @@ namespace Uruk.Server.MongoDB
 {
     internal class AuditTrailBlock
     {
-        public AuditTrailBlock(string iss, string jti, long iat, string[] aud, string? txn, long? toe, JwtObject events, byte[] raw, byte[] hash)
+        public AuditTrailBlock(string iss, string jti, long iat, string[] aud, string? txn, long? toe, JwtObject events, byte[] raw, byte[] hash, byte[]? rootHash)
         {
             Iss = iss;
             Jti = jti;
@@ -17,6 +17,7 @@ namespace Uruk.Server.MongoDB
             Events = events;
             Raw = raw;
             Hash = hash;
+            RootHash = rootHash;
         }
 
         [BsonRequired]
@@ -54,5 +55,9 @@ namespace Uruk.Server.MongoDB
         [BsonRequired]
         [BsonElement("hash")]
         public byte[] Hash { get; set; }
+
+        [BsonRequired]
+        [BsonElement("r_hash")]
+        public byte[]? RootHash { get; set; }
     }
 }

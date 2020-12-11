@@ -2,13 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
+using System.Threading;
 using JsonWebToken;
 
 namespace Uruk.Server
 {
     public class AuditTrailHubRegistry : IEnumerable<AuditTrailHubRegistration>
     {
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+
         private readonly List<AuditTrailHubRegistration> _registrations = new List<AuditTrailHubRegistration>();
         private readonly Dictionary<string, AuditTrailHubRegistration> _registrationLookup = new Dictionary<string, AuditTrailHubRegistration>();
         private string? _audience;
@@ -17,17 +19,35 @@ namespace Uruk.Server
             => _registrations.Add(registration);
 
         public bool TryGet(string key, [NotNullWhen(true)] out AuditTrailHubRegistration? registration)
-            => _registrationLookup.TryGetValue(key, out registration);
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _registrationLookup.TryGetValue(key, out registration);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
 
         public void Configure()
         {
-            var audience = _audience ?? throw new InvalidOperationException($"You must call the method '{nameof(Configure)}' with the 'audience' parameter before calling this override.");
-            _registrationLookup.Clear();
-            for (int i = 0; i < _registrations.Count; i++)
+            _lock.EnterWriteLock();
+            try
             {
-                var registration = _registrations[i];
-                registration.ConfigurePolicy(audience);
-                _registrationLookup.Add(registration.ClientId, registration);
+                var audience = _audience ?? throw new InvalidOperationException($"You must call the method '{nameof(Configure)}' with the 'audience' parameter before calling this override.");
+                _registrationLookup.Clear();
+                for (int i = 0; i < _registrations.Count; i++)
+                {
+                    var registration = _registrations[i];
+                    registration.ConfigurePolicy(audience);
+                    _registrationLookup.TryAdd(registration.ClientId, registration);
+                }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
         }
 

@@ -5,11 +5,15 @@ namespace Uruk.Server.MongoDB
 {
     internal class Keyring
     {
-        public Keyring(string iss, BsonDocument keys)
+        public Keyring(ObjectId id, string iss, BsonDocument[] keys)
         {
+            ID = id;
             Iss = iss;
             Keys = keys;
         }
+
+        [BsonId]
+        public ObjectId ID { get; set; }
 
         [BsonRequired]
         [BsonElement("iss")]
@@ -17,6 +21,6 @@ namespace Uruk.Server.MongoDB
 
         [BsonRequired]
         [BsonElement("keys")]
-        public BsonDocument Keys { get; set; }
+        public BsonDocument[] Keys { get; set; }
     }
 }

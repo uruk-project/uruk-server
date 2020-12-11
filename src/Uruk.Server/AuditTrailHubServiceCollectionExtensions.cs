@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using JsonWebToken;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Uruk.Server;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -25,6 +28,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IAuditTrailHubService, AuditTrailHubService>();
             services.AddHostedService<AuditTrailStorageBackgroundService>();
             services.TryAddSingleton<IAuditTrailSink, DefaultAuditTrailSink>();
+            services.TryAddSingleton<IMerkleTree, NullMerkleTree>();
+
             services.AddOptions<AuditTrailHubOptions>()
                 .PostConfigure(options =>
                 {
@@ -40,5 +45,12 @@ namespace Microsoft.Extensions.DependencyInjection
     
             return builder;
         }
+    }
+
+    public enum SupportedHashAlgorithm
+    {
+        Sha256,
+        Sha384,
+        Sha512
     }
 }

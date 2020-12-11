@@ -17,14 +17,21 @@ namespace Uruk.Server.MongoDB
         private readonly IMongoClient _client;
         private readonly MongoDBStoreOptions _options;
         private readonly ILogger<MongoDBAuditTrailStore> _logger;
+        private readonly IMerkleTree? _tree;
         private readonly IMongoCollection<AuditTrailBlock> _auditTrails;
         private readonly IMongoCollection<Keyring> _keyring;
 
-        public MongoDBAuditTrailStore(IMongoClient client, IOptions<MongoDBStoreOptions> options, ILogger<MongoDBAuditTrailStore> logger)
+        public MongoDBAuditTrailStore(IMongoClient client, IOptions<MongoDBStoreOptions> options, ILogger<MongoDBAuditTrailStore> logger, IMerkleTree? tree = null)
         {
-            _client = client;
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _options = options.Value;
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _tree = tree;
             var db = _client.GetDatabase(_options.Database);
             _auditTrails = db.GetCollection<AuditTrailBlock>("audit_trail");
             _keyring = db.GetCollection<Keyring>("keyring");
@@ -44,28 +51,32 @@ namespace Uruk.Server.MongoDB
 
             var keyringIndexModel = new CreateIndexModel<Keyring>(
                     Builders<Keyring>.IndexKeys.Ascending(a => a.Iss),
-                    new CreateIndexOptions { Unique = true }
+                    new CreateIndexOptions() { Unique = true }
                 );
             _keyring.Indexes.CreateOne(keyringIndexModel);
         }
 
-        private static void ComputeHash(ReadOnlySpan<byte> source, Span<byte> destination)
-            => Sha256.Shared.ComputeHash(source, destination);
-
         public async Task StoreAsync(AuditTrailRecord record, CancellationToken cancellationToken)
         {
-            var hash = new byte[Sha256.Shared.HashSize];
-            ComputeHash(record.Raw, hash);
+            var hash = new byte[Sha256.Sha256HashSize];
+            Sha256.Hash(record.Raw, hash);
+            SignedTreeHead? signedTreeHead = null;
+            if (_tree != null)
+            {
+                signedTreeHead = await _tree.AppendAsync(hash);
+            }
+
             var block = new AuditTrailBlock(
-                 record.Issuer,
-                 record.Token.Payload!.Jti!,
-                 record.Token.Payload.Iat!.Value,
-                 record.Token.Payload.Aud,
-                 record.Token.TransactionNumber,
-                 record.Token.Payload.TryGetValue(SetClaims.ToeUtf8, out var toe) ? (long?)toe.Value : default,
+                record.Issuer,
+                record.Token.Payload!.Jti!,
+                record.Token.Payload.Iat!.Value,
+                record.Token.Payload.Aud,
+                record.Token.TransactionNumber,
+                record.Token.Payload.TryGetValue(SetClaims.ToeUtf8, out var toe) ? (long?)toe.Value : default,
                 record.Token.Events,
                 record.Raw,
-                 hash
+                hash,
+                signedTreeHead?.Hash
             );
 
             using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
@@ -78,7 +89,11 @@ namespace Uruk.Server.MongoDB
                     record.Token.SigningKey.Kid = Encoding.UTF8.GetString(record.Token.SigningKey.ComputeThumbprint());
                 }
 
-                var filter = Builders<Keyring>.Filter.Eq("keys.kid", record.Token.SigningKey!.Kid);
+                var filter =
+                    Builders<Keyring>.Filter.And(
+                        Builders<Keyring>.Filter.Eq("iss", record.Issuer),
+                        Builders<Keyring>.Filter.Eq("keys.kid", record.Token.SigningKey!.Kid)
+                    );
                 var storedKey = await _keyring.Find(filter).FirstOrDefaultAsync(cancellationToken);
                 if (storedKey is null)
                 {
@@ -102,7 +117,7 @@ namespace Uruk.Server.MongoDB
                 await session.AbortTransactionAsync();
             }
 
-            _logger.LogInformation("'{Jti}' has been recorded", block.Jti);
+            _logger.LogInformation("'{Jti}' has been recorded.", block.Jti);
         }
 
         private unsafe static BsonDocument SerializeKey(Jwk key)

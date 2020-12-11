@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Uruk.Server.MongoDB\Uruk.Server.MongoDB.csproj" />
     <ProjectReference Include="..\..\src\Uruk.Server\Uruk.Server.csproj" />
   </ItemGroup>
 
