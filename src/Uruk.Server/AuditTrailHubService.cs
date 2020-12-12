@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using JsonWebToken;
+using Microsoft.Extensions.Options;
 
 namespace Uruk.Server
 {
@@ -13,22 +14,20 @@ namespace Uruk.Server
         private static readonly JsonEncodedText invalidRequestJson = JsonEncodedText.Encode("invalid_request");
         private static readonly JsonEncodedText invalidKeyJson = JsonEncodedText.Encode("invalid_key");
 
-        private readonly JwtReader _jwtReader;
         private readonly IAuditTrailSink _sink;
+        private readonly AuditTrailHubOptions _options;
 
-        public AuditTrailHubService(IAuditTrailSink sink)
+        public AuditTrailHubService(IAuditTrailSink sink, IOptions<AuditTrailHubOptions> options)
         {
             _sink = sink ?? throw new ArgumentNullException(nameof(sink));
-            _jwtReader = new JwtReader();
+            _options = options.Value;
         }
 
-        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default)
+        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, CancellationToken cancellationToken = default)
         {
-            var result = _jwtReader.TryReadToken(buffer, registration.Policy);
-            if (result.Succedeed)
+            if (Jwt.TryParse(buffer, _options.Policy, out var jwt))
             {
-                var token = result.Token!.AsSecurityEventToken();
-                var record = new AuditTrailRecord(buffer.IsSingleSegment ? buffer.FirstSpan.ToArray() : buffer.ToArray(), token, registration.ClientId);
+                var record = new AuditTrailRecord(buffer.ToArray(), jwt, jwt.Payload.TryGetClaim("iss", out var iss) ? iss.GetString() : "");
                 if (!_sink.TryWrite(record))
                 {
                     // throttle ?
@@ -42,7 +41,8 @@ namespace Uruk.Server
             }
             else
             {
-                if ((result.Status & TokenValidationStatus.KeyError) == TokenValidationStatus.KeyError)
+                var error = jwt.Error!;
+                if ((error.Status & TokenValidationStatus.KeyError) == TokenValidationStatus.KeyError)
                 {
                     return Task.FromResult(new AuditTrailResponse
                     {
@@ -51,7 +51,7 @@ namespace Uruk.Server
                 }
                 else
                 {
-                    var description = result.Status switch
+                    var description = jwt.Error!.Status switch
                     {
                         TokenValidationStatus.MalformedToken => "Malformed token.",
                         TokenValidationStatus.TokenReplayed => "Duplicated token.",
@@ -60,12 +60,12 @@ namespace Uruk.Server
                         TokenValidationStatus.DecryptionFailed => "Unable to decrypt the token.",
                         TokenValidationStatus.NotYetValid => "The token is not yet valid.",
                         TokenValidationStatus.DecompressionFailed => "Unable to decompress the token.",
-                        TokenValidationStatus.CriticalHeaderMissing => $"The critical header '{result.ErrorHeader}' is missing.",
-                        TokenValidationStatus.CriticalHeaderUnsupported => $"The critical header '{result.ErrorHeader}' is not supported.",
-                        TokenValidationStatus.InvalidClaim => $"The claim '{result.ErrorClaim}' is invalid.",
-                        TokenValidationStatus.MissingClaim => $"The claim '{result.ErrorClaim}' is missing.",
-                        TokenValidationStatus.InvalidHeader => $"The header '{result.ErrorHeader}' is invalid.",
-                        TokenValidationStatus.MissingHeader => $"The header '{result.ErrorHeader}' is missing.",
+                        TokenValidationStatus.CriticalHeaderMissing => $"The critical header '{error.ErrorHeader}' is missing.",
+                        TokenValidationStatus.CriticalHeaderUnsupported => $"The critical header '{error.ErrorHeader}' is not supported.",
+                        TokenValidationStatus.InvalidClaim => $"The claim '{error.ErrorClaim}' is invalid.",
+                        TokenValidationStatus.MissingClaim => $"The claim '{error.ErrorClaim}' is missing.",
+                        TokenValidationStatus.InvalidHeader => $"The header '{error.ErrorHeader}' is invalid.",
+                        TokenValidationStatus.MissingHeader => $"The header '{error.ErrorHeader}' is missing.",
                         _ => null
                     };
 

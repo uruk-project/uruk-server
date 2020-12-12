@@ -6,6 +6,6 @@ namespace Uruk.Server
 {
     public interface IAuditTrailHubService
     {
-        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, AuditTrailHubRegistration registration, CancellationToken cancellationToken = default);
+        public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, CancellationToken cancellationToken = default);
     }
 }

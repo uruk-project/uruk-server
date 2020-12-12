@@ -22,7 +22,7 @@ namespace Uruk.Server.MongoDBSample
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAuditTrailHub("636C69656E745F6964")
-                .RegisterClient(new AuditTrailHubRegistration("m2m", SignatureAlgorithm.HmacSha256, new SymmetricJwk("R9MyWaEoyiMYViVWo8Fk4TUGWiSoaW6U1nOqXri8ZXU")))
+                .RegisterClient(new AuditTrailHubRegistration("m2m", SignatureAlgorithm.HS256, SymmetricJwk.FromBase64Url("R9MyWaEoyiMYViVWo8Fk4TUGWiSoaW6U1nOqXri8ZXU")))
                 .AddMongoDB("mongodb://localhost");
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
