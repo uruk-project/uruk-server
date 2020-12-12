@@ -5,19 +5,19 @@ namespace Uruk.Server
 {
     public class AuditTrailRecord
     {
-        public AuditTrailRecord(byte[] raw, SecurityEventToken token, string clientId)
+        public AuditTrailRecord(ReadOnlyMemory<byte> raw, Jwt token, string clientId)
         {
-            Raw = raw ?? throw new ArgumentNullException(nameof(raw));
+            Raw = raw;
             Token = token ?? throw new ArgumentNullException(nameof(token));
-            ClienId = clientId;
+            ClientId = clientId;
         }
 
-        public byte[] Raw { get; }
+        public ReadOnlyMemory<byte> Raw { get; }
 
-        public SecurityEventToken Token { get; }
+        public Jwt Token { get; }
 
-        public string ClienId { get; }
+        public string ClientId { get; }
 
-        public string Issuer => Token.Issuer!;
+        public string Issuer => Token!.Payload![JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!;
     }
 }
