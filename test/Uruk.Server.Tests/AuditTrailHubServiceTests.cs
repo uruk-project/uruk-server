@@ -21,11 +21,10 @@ namespace Uruk.Server.Tests
             var options = CreateOptions(key);
             var service = new AuditTrailHubService(new TestEventSink(response: true), options);
 
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken));
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), out var error);
 
-            Assert.True(response.Succeeded);
-            Assert.True(response.Error.EncodedUtf8Bytes.IsEmpty);
-            Assert.Null(response.Description);
+            Assert.True(response);
+            Assert.Null(error);
         }
 
         [Fact]
@@ -36,11 +35,11 @@ namespace Uruk.Server.Tests
             var options = CreateOptions(key);
             var service = new AuditTrailHubService(new TestEventSink(response: false), options);
 
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken));
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), out var error);
 
-            Assert.False(response.Succeeded);
-            Assert.False(response.Error.EncodedUtf8Bytes.IsEmpty);
-            Assert.Null(response.Description);
+            Assert.False(response);
+            Assert.False(error!.Code.EncodedUtf8Bytes.IsEmpty);
+            Assert.Null(error.Description);
         }
 
         [Fact]
@@ -48,11 +47,11 @@ namespace Uruk.Server.Tests
         {
             var options = CreateOptions();
             var service = new AuditTrailHubService(new TestEventSink(response: false), options);
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(new byte[0]));
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(new byte[0]), out var error);
 
-            Assert.False(response.Succeeded);
-            Assert.Equal(JsonEncodedText.Encode("invalid_request"), response.Error);
-            Assert.NotNull(response.Description);
+            Assert.False(response);
+            Assert.Equal(JsonEncodedText.Encode("invalid_request"), error!.Code);
+            Assert.NotNull(error.Description);
         }
 
         [Fact]
@@ -62,11 +61,11 @@ namespace Uruk.Server.Tests
             key.Kid = JsonEncodedText.Encode("bad issuer");
             var options = CreateOptions(key);
             var service = new AuditTrailHubService(new TestEventSink(response: false), options);
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken));
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), out var error);
 
-            Assert.False(response.Succeeded);
-            Assert.Equal(JsonEncodedText.Encode("invalid_key"), response.Error);
-            Assert.Null(response.Description);
+            Assert.False(response);
+            Assert.Equal(JsonEncodedText.Encode("invalid_key"), error!.Code);
+            Assert.Null(error.Description);
         }
 
         [Fact]
@@ -76,11 +75,11 @@ namespace Uruk.Server.Tests
             key.Kid = JsonEncodedText.Encode("bad key");
             var options = CreateOptions(key);
             var service = new AuditTrailHubService(new TestEventSink(response: false), options);
-            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken));
+            var response = await service.TryStoreAuditTrail(new ReadOnlySequence<byte>(ValidToken), out var error);
 
-            Assert.False(response.Succeeded);
-            Assert.Equal(JsonEncodedText.Encode("invalid_key"), response.Error);
-            Assert.Null(response.Description);
+            Assert.False(response);
+            Assert.Equal(JsonEncodedText.Encode("invalid_key"), error!.Code);
+            Assert.Null(error.Description);
         }
 
         private static IOptions<AuditTrailHubOptions> CreateOptions(Jwk? key = null)

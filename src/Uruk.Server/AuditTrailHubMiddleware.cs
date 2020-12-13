@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -13,8 +11,6 @@ namespace Uruk.Server
     {
         private static readonly JsonEncodedText errJson = JsonEncodedText.Encode("err");
         private static readonly JsonEncodedText descriptionJson = JsonEncodedText.Encode("description");
-        private static readonly JsonEncodedText authenticationFailedJson = JsonEncodedText.Encode("authentication_failed");
-        private static readonly JsonEncodedText accessDeniedJson = JsonEncodedText.Encode("access_denied");
 
         private readonly RequestDelegate _next;
         private readonly AuditTrailHubOptions _options;
@@ -48,71 +44,60 @@ namespace Uruk.Server
                 return;
             }
 
-            //context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            //context.Response.ContentType = "application/json";
-            //ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
-            //try
-            //{
-            //    var writer = reusableWriter.GetJsonWriter();
-            //    writer.WriteStartObject();
-            //    writer.WriteString(errJson, accessDeniedJson);
-            //    writer.WriteEndObject();
-            //    writer.Flush();
-            //    return;
-            //}
-            //finally
-            //{
-            //    ReusableUtf8JsonWriter.Return(reusableWriter);
-            //}
-
+            var response = context.Response;
             var readResult = await request.BodyReader.ReadAsync();
-            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer);
-            if (response.Succeeded)
+            if (await _auditTrailService.TryStoreAuditTrail(readResult.Buffer, out var error))
             {
-                context.Response.StatusCode = StatusCodes.Status202Accepted;
+                response.StatusCode = StatusCodes.Status202Accepted;
             }
             else
             {
-                context.Response.ContentType = "application/json";
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-
-                // invalid_request
-                // invalid_key
-                // authentication_failed
-                ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
-                try
+                switch (error!.Status)
                 {
-                    var writer = reusableWriter.GetJsonWriter();
-                    writer.WriteStartObject();
+                    case AuditTrailErrorStatus.BadRequest:
+                        WriteBadRequestResponse(response, error);
 
-                    writer.WriteString(errJson, response.Error);
-                    if (response.Description != null)
-                    {
-                        writer.WriteString(descriptionJson, response.Description);
-                    }
+                        break;
 
-                    writer.WriteEndObject();
-                    writer.Flush();
-                }
-                finally
-                {
-                    ReusableUtf8JsonWriter.Return(reusableWriter);
+                    case AuditTrailErrorStatus.TooManyRequest:
+                        WriteTooManyRequestResponse(response);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException();
+
                 }
             }
 
             request.BodyReader.AdvanceTo(readResult.Buffer.End);
         }
 
-        private static void AuthenticationFailed(HttpContext context)
+        private static void WriteTooManyRequestResponse(HttpResponse response)
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/json";
-            ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
+            response.StatusCode = StatusCodes.Status429TooManyRequests;
+            response.Headers["Retry-After"] = "60";
+        }
+
+        private static void WriteBadRequestResponse(HttpResponse response, AuditTrailError? error)
+        {
+            response.ContentType = "application/json";
+            response.StatusCode = StatusCodes.Status400BadRequest;
+
+            // invalid_request
+            // invalid_key
+            // authentication_failed
+            ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(response.BodyWriter);
             try
             {
                 var writer = reusableWriter.GetJsonWriter();
                 writer.WriteStartObject();
-                writer.WriteString(errJson, authenticationFailedJson);
+
+                writer.WriteString(errJson, error!.Code);
+                if (error.Description != null)
+                {
+                    writer.WriteString(descriptionJson, error.Description);
+                }
+
                 writer.WriteEndObject();
                 writer.Flush();
             }
