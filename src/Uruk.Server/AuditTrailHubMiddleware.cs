@@ -48,47 +48,25 @@ namespace Uruk.Server
                 return;
             }
 
-            var authentication = await context.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
-            if (!authentication.Succeeded || !authentication.Principal.Identity.IsAuthenticated)
-            {
-                AuthenticationFailed(context);
-                return;
-            }
-
-            var clientIdClaim = authentication.Principal.FindFirst("client_id");
-            if (clientIdClaim is null || clientIdClaim.Value is null)
-            {
-                AuthenticationFailed(context);
-                return;
-            }
-
-            var clientId = clientIdClaim.Value;
-            if (!_options.Registry.TryGet(clientId, out var registration))
-            {
-                _options.Registry.Refresh();
-                if (!_options.Registry.TryGet(clientId, out registration))
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    context.Response.ContentType = "application/json";
-                    ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
-                    try
-                    {
-                        var writer = reusableWriter.GetJsonWriter();
-                        writer.WriteStartObject();
-                        writer.WriteString(errJson, accessDeniedJson);
-                        writer.WriteEndObject();
-                        writer.Flush();
-                        return;
-                    }
-                    finally
-                    {
-                        ReusableUtf8JsonWriter.Return(reusableWriter);
-                    }
-                }
-            }
+            //context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            //context.Response.ContentType = "application/json";
+            //ReusableUtf8JsonWriter reusableWriter = ReusableUtf8JsonWriter.Get(context.Response.BodyWriter);
+            //try
+            //{
+            //    var writer = reusableWriter.GetJsonWriter();
+            //    writer.WriteStartObject();
+            //    writer.WriteString(errJson, accessDeniedJson);
+            //    writer.WriteEndObject();
+            //    writer.Flush();
+            //    return;
+            //}
+            //finally
+            //{
+            //    ReusableUtf8JsonWriter.Return(reusableWriter);
+            //}
 
             var readResult = await request.BodyReader.ReadAsync();
-            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer, registration);
+            var response = await _auditTrailService.TryStoreAuditTrail(readResult.Buffer);
             if (response.Succeeded)
             {
                 context.Response.StatusCode = StatusCodes.Status202Accepted;

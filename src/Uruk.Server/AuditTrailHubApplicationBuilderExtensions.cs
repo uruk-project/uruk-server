@@ -33,7 +33,7 @@ namespace Uruk.Server
                 throw new InvalidOperationException($"Unable to find the required services. Please add all the required services by calling 'nameof(IServiceCollection).nameof(EventReceiverServiceCollectionExtensions.AddEventReceiver)' inside the call to 'ConfigureServices(...)' in the application startup code."); 
             }
 
-            app.Map(path, app => app.UseAuthentication().UseMiddleware<AuditTrailHubMiddleware>(args));
+            app.Map(path, app => app.UseMiddleware<AuditTrailHubMiddleware>(args));
         }
     }
 }

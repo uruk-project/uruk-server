@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using JsonWebToken;
+using JsonWebToken.Cryptography;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -59,50 +61,51 @@ namespace Uruk.Server.MongoDB
         public async Task StoreAsync(AuditTrailRecord record, CancellationToken cancellationToken)
         {
             var hash = new byte[Sha256.Sha256HashSize];
-            Sha256.Hash(record.Raw, hash);
+            ComputeHash(record.Raw.Span, hash);
             SignedTreeHead? signedTreeHead = null;
             if (_tree != null)
             {
                 signedTreeHead = await _tree.AppendAsync(hash);
             }
-
-            var block = new AuditTrailBlock(
-                record.Issuer,
-                record.Token.Payload!.Jti!,
-                record.Token.Payload.Iat!.Value,
-                record.Token.Payload.Aud,
-                record.Token.TransactionNumber,
-                record.Token.Payload.TryGetValue(SetClaims.ToeUtf8, out var toe) ? (long?)toe.Value : default,
-                record.Token.Events,
-                record.Raw,
-                hash,
+            
+            var payload = record.Token.Payload!;
+            
+            // Is it posible to fail here ?
+            MemoryMarshal.TryGetArray(record.Raw, out var segment);
+            var block = new AuditTrailBlock
+            {
+                Iss = payload[JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!,
+                Jti = payload[JwtClaimNames.Jti.EncodedUtf8Bytes].GetString()!,
+                Iat = payload[JwtClaimNames.Iat.EncodedUtf8Bytes].GetInt64(),
+                Aud = payload[JwtClaimNames.Aud.EncodedUtf8Bytes].GetStringArray()!,
+                Txn = payload[SecEventClaimNames.Txn].GetString(),
+                Toe = payload[SecEventClaimNames.Toe].GetInt64(),
+                Events = payload[SecEventClaimNames.Events.EncodedUtf8Bytes].GetJsonDocument(),
+                Raw = segment.Array!,
+                Hash = hash
                 signedTreeHead?.Hash
-            );
+            };
 
             using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
             try
             {
                 session.StartTransaction();
                 await _auditTrails.InsertOneAsync(block, cancellationToken: cancellationToken);
-                if (record.Token.SigningKey!.Kid is null)
-                {
-                    record.Token.SigningKey.Kid = Encoding.UTF8.GetString(record.Token.SigningKey.ComputeThumbprint());
-                }
 
-                var filter =
-                    Builders<Keyring>.Filter.And(
-                        Builders<Keyring>.Filter.Eq("iss", record.Issuer),
-                        Builders<Keyring>.Filter.Eq("keys.kid", record.Token.SigningKey!.Kid)
-                    );
-                var storedKey = await _keyring.Find(filter).FirstOrDefaultAsync(cancellationToken);
-                if (storedKey is null)
-                {
-                    var key = SerializeKey(record.Token.SigningKey!);
-                    var jwksFilter = Builders<Keyring>.Filter.Eq("iss", record.Issuer);
-                    var push = Builders<Keyring>.Update.Push("keys", key)
-                        .SetOnInsert("iss", record.Issuer);
-                    await _keyring.UpdateOneAsync(jwksFilter, push, new UpdateOptions { IsUpsert = true }, cancellationToken);
-                }
+                //var kid = record.Token.Header[JwtHeaderParameterNames.Kid.EncodedUtf8Bytes].GetString()!;
+                //if (!_keyringInMemory.HasKey(kid))
+                //{
+                //    var filter = Builders<Keyring>.Filter.Eq("keys.kid", kid);
+                //    var storedKey = await _keyring.Find(filter).FirstOrDefaultAsync(cancellationToken);
+                //    if (storedKey is null)
+                //    {
+                //        var key = SerializeKey(record.Token.SigningKey!);
+                //        var jwksFilter = Builders<Keyring>.Filter.Eq("iss", record.Issuer);
+                //        var push = Builders<Keyring>.Update.Push("keys", key)
+                //            .SetOnInsert("iss", record.Issuer);
+                //        await _keyring.UpdateOneAsync(jwksFilter, push, new UpdateOptions { IsUpsert = true }, cancellationToken);
+                //    }
+                //}
 
                 await session.CommitTransactionAsync(cancellationToken);
             }

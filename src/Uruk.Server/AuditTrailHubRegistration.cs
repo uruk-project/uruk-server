@@ -12,53 +12,23 @@ namespace Uruk.Server
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
 
         private readonly List<AuditTrailHubRegistration> _registrations = new List<AuditTrailHubRegistration>();
-        private readonly Dictionary<string, AuditTrailHubRegistration> _registrationLookup = new Dictionary<string, AuditTrailHubRegistration>();
-        private string? _audience;
 
         public void Add(AuditTrailHubRegistration registration)
             => _registrations.Add(registration);
 
-        public bool TryGet(string key, [NotNullWhen(true)] out AuditTrailHubRegistration? registration)
+        public TokenValidationPolicy BuildPolicy(string audience)
         {
-            _lock.EnterReadLock();
-            try
+            var builder = new TokenValidationPolicyBuilder();
+            builder.RequireAudience(audience)
+                .RequireSecEventToken();
+          
+            for (int i = 0; i < _registrations.Count; i++)
             {
-                return _registrationLookup.TryGetValue(key, out registration);
+                var registration = _registrations[i];
+                registration.ConfigurePolicy(builder);
             }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
 
-        public void Configure()
-        {
-            _lock.EnterWriteLock();
-            try
-            {
-                var audience = _audience ?? throw new InvalidOperationException($"You must call the method '{nameof(Configure)}' with the 'audience' parameter before calling this override.");
-                _registrationLookup.Clear();
-                for (int i = 0; i < _registrations.Count; i++)
-                {
-                    var registration = _registrations[i];
-                    registration.ConfigurePolicy(audience);
-                    _registrationLookup.TryAdd(registration.ClientId, registration);
-                }
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        public void Configure(string audience)
-        {
-            _audience = audience ?? throw new ArgumentNullException(nameof(audience));
-        }
-
-        public void Refresh()
-        {
-            Configure();
+            return builder.Build();
         }
 
         public IEnumerator<AuditTrailHubRegistration> GetEnumerator()
@@ -70,23 +40,21 @@ namespace Uruk.Server
 
     public class AuditTrailHubRegistration
     {
-        private TokenValidationPolicy? _policy;
-
-        public AuditTrailHubRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, Jwk jwk)
+        public AuditTrailHubRegistration(string issuer, SignatureAlgorithm signatureAlgorithm, Jwk jwk)
         {
-            ClientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
+            Issuer = issuer ?? throw new ArgumentNullException(nameof(issuer));
             Jwk = jwk ?? throw new ArgumentNullException(nameof(jwk));
             SignatureAlgorithm = signatureAlgorithm ?? throw new ArgumentNullException(nameof(signatureAlgorithm));
         }
 
-        public AuditTrailHubRegistration(string clientId, SignatureAlgorithm signatureAlgorithm, string jwksUri)
+        public AuditTrailHubRegistration(string issuer, SignatureAlgorithm signatureAlgorithm, string jwksUri)
         {
-            ClientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
+            Issuer = issuer ?? throw new ArgumentNullException(nameof(issuer));
             JwksUri = jwksUri ?? throw new ArgumentNullException(nameof(jwksUri));
             SignatureAlgorithm = signatureAlgorithm ?? throw new ArgumentNullException(nameof(signatureAlgorithm));
         }
 
-        public string ClientId { get; }
+        public string Issuer { get; }
 
         public string? JwksUri { get; }
 
@@ -94,26 +62,16 @@ namespace Uruk.Server
 
         public SignatureAlgorithm SignatureAlgorithm { get; }
 
-        public TokenValidationPolicy Policy
-            => _policy
-                ?? throw new InvalidOperationException($"You must call the method '{nameof(ConfigurePolicy)}' before using the {nameof(Policy)} property.");
-
-        public void ConfigurePolicy(string audience)
+        public void ConfigurePolicy(TokenValidationPolicyBuilder builder)
         {
-            var builder = new TokenValidationPolicyBuilder()
-                .RequireSecurityEventToken()
-                .RequireAudience(audience);
-
             if (Jwk != null)
             {
-                builder.RequireSignature(Jwk, SignatureAlgorithm);
+                builder.RequireSignature(Issuer, Jwk, SignatureAlgorithm);
             }
             else if (JwksUri != null)
             {
-                builder.RequireSignature(JwksUri, SignatureAlgorithm);
+                builder.RequireSignature(Issuer, JwksUri, SignatureAlgorithm);
             }
-
-            _policy = builder.Build();
         }
     }
 }

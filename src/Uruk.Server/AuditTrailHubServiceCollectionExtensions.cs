@@ -33,7 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddOptions<AuditTrailHubOptions>()
                 .PostConfigure(options =>
                 {
-                    options.Registry.Configure(audience);
+                    options.Policy = options.Registry.BuildPolicy(audience);
                 });
 
             return new AuditTrailHubBuilder(services);
