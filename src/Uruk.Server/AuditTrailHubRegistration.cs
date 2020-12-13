@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using JsonWebToken;
 
 namespace Uruk.Server
 {
     public class AuditTrailHubRegistry : IEnumerable<AuditTrailHubRegistration>
     {
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+
         private readonly List<AuditTrailHubRegistration> _registrations = new List<AuditTrailHubRegistration>();
 
         public void Add(AuditTrailHubRegistration registration)

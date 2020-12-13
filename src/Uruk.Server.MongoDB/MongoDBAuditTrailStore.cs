@@ -9,7 +9,6 @@ using JsonWebToken.Cryptography;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
 namespace Uruk.Server.MongoDB
@@ -19,14 +18,21 @@ namespace Uruk.Server.MongoDB
         private readonly IMongoClient _client;
         private readonly MongoDBStoreOptions _options;
         private readonly ILogger<MongoDBAuditTrailStore> _logger;
+        private readonly IMerkleTree? _tree;
         private readonly IMongoCollection<AuditTrailBlock> _auditTrails;
         private readonly IMongoCollection<Keyring> _keyring;
 
-        public MongoDBAuditTrailStore(IMongoClient client, IOptions<MongoDBStoreOptions> options, ILogger<MongoDBAuditTrailStore> logger)
+        public MongoDBAuditTrailStore(IMongoClient client, IOptions<MongoDBStoreOptions> options, ILogger<MongoDBAuditTrailStore> logger, IMerkleTree? tree = null)
         {
-            _client = client;
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _options = options.Value;
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _tree = tree;
             var db = _client.GetDatabase(_options.Database);
             _auditTrails = db.GetCollection<AuditTrailBlock>("audit_trail");
             _keyring = db.GetCollection<Keyring>("keyring");
@@ -46,34 +52,38 @@ namespace Uruk.Server.MongoDB
 
             var keyringIndexModel = new CreateIndexModel<Keyring>(
                     Builders<Keyring>.IndexKeys.Ascending(a => a.Iss),
-                    new CreateIndexOptions { Unique = true }
+                    new CreateIndexOptions() { Unique = true }
                 );
             _keyring.Indexes.CreateOne(keyringIndexModel);
         }
 
-        private static void ComputeHash(ReadOnlySpan<byte> source, Span<byte> destination)
-            => Sha256.Shared.ComputeHash(source, destination);
-
         public async Task StoreAsync(AuditTrailRecord record, CancellationToken cancellationToken)
         {
             var hash = new byte[Sha256.Sha256HashSize];
-            ComputeHash(record.Raw.Span, hash);
+            Sha256.Shared.ComputeHash(record.Raw.Span, hash);
+            SignedTreeHead? signedTreeHead = null;
+            if (_tree != null)
+            {
+                signedTreeHead = await _tree.AppendAsync(hash);
+            }
+            
             var payload = record.Token.Payload!;
             
             // Is it posible to fail here ?
             MemoryMarshal.TryGetArray(record.Raw, out var segment);
             var block = new AuditTrailBlock
-            {
-                Iss = payload[JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!,
-                Jti = payload[JwtClaimNames.Jti.EncodedUtf8Bytes].GetString()!,
-                Iat = payload[JwtClaimNames.Iat.EncodedUtf8Bytes].GetInt64(),
-                Aud = payload[JwtClaimNames.Aud.EncodedUtf8Bytes].GetStringArray()!,
-                Txn = payload[SecEventClaimNames.Txn].GetString(),
-                Toe = payload[SecEventClaimNames.Toe].GetInt64(),
-                Events = payload[SecEventClaimNames.Events.EncodedUtf8Bytes].GetJsonDocument(),
-                Raw = segment.Array!,
-                Hash = hash
-            };
+            (
+                iss : payload[JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!,
+                jti : payload[JwtClaimNames.Jti.EncodedUtf8Bytes].GetString()!,
+                iat : payload[JwtClaimNames.Iat.EncodedUtf8Bytes].GetInt64(),
+                aud : payload[JwtClaimNames.Aud.EncodedUtf8Bytes].GetStringArray()!,
+                txn : payload[SecEventClaimNames.Txn].GetString(),
+                toe : payload[SecEventClaimNames.Toe].GetInt64(),
+                events : payload[SecEventClaimNames.Events.EncodedUtf8Bytes].GetJsonDocument(),
+                raw : segment.Array!,
+                hash : hash,
+                rootHash: signedTreeHead?.Hash
+            );
 
             using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
             try
@@ -109,7 +119,7 @@ namespace Uruk.Server.MongoDB
                 await session.AbortTransactionAsync();
             }
 
-            _logger.LogInformation("'{Jti}' has been recorded", block.Jti);
+            _logger.LogInformation("'{Jti}' has been recorded.", block.Jti);
         }
 
         private unsafe static BsonDocument SerializeKey(Jwk key)
@@ -121,56 +131,6 @@ namespace Uruk.Server.MongoDB
             jsonWriter.WriteEndObject();
             jsonWriter.Flush();
             return BsonDocument.Parse(Encoding.UTF8.GetString(bufferWriter.WrittenSpan));
-        }
-
-        private class AuditTrailBlock
-        {
-            [BsonRequired]
-            [BsonElement("iss")]
-            public string Iss { get; set; }
-
-            [BsonRequired]
-            [BsonElement("jti")]
-            public string Jti { get; set; }
-
-            [BsonRequired]
-            [BsonElement("iat")]
-            public long Iat { get; set; }
-
-            [BsonElement("aud")]
-            [BsonIgnoreIfNull]
-            public string[] Aud { get; set; }
-
-            [BsonElement("txn")]
-            [BsonIgnoreIfNull]
-            public string? Txn { get; set; }
-
-            [BsonElement("toe")]
-            [BsonIgnoreIfNull]
-            public long? Toe { get; set; }
-
-            [BsonRequired]
-            [BsonElement("raw")]
-            public byte[] Raw { get; set; }
-
-            [BsonRequired]
-            [BsonElement("events")]
-            public JsonDocument Events { get; set; }
-
-            [BsonRequired]
-            [BsonElement("hash")]
-            public byte[] Hash { get; set; }
-        }
-
-        private class Keyring
-        {
-            [BsonRequired]
-            [BsonElement("iss")]
-            public string Iss { get; set; }
-
-            [BsonRequired]
-            [BsonElement("keys")]
-            public BsonDocument Keys { get; set; }
         }
     }
 }
