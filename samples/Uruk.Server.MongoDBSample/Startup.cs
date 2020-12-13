@@ -25,7 +25,7 @@ namespace Uruk.Server.MongoDBSample
             ecdsa.GenerateKey(ECCurve.NamedCurves.nistP256);
             services.AddAuditTrailHub("636C69656E745F6964")
                 .RegisterClient(new AuditTrailHubRegistration("m2m", SignatureAlgorithm.HS256, SymmetricJwk.FromBase64Url("R9MyWaEoyiMYViVWo8Fk4TUGWiSoaW6U1nOqXri8ZXU")))
-                .AddMongoDB("mongodb://localhost");
+                .AddMongoDBStorage("mongodb://localhost")
                 .AddMongoDBMerkleTree(SupportedHashAlgorithm.Sha256, ecdsa.ExportParameters(true));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

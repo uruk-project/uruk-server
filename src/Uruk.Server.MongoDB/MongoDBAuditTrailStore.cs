@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -61,7 +60,7 @@ namespace Uruk.Server.MongoDB
         public async Task StoreAsync(AuditTrailRecord record, CancellationToken cancellationToken)
         {
             var hash = new byte[Sha256.Sha256HashSize];
-            ComputeHash(record.Raw.Span, hash);
+            Sha256.Shared.ComputeHash(record.Raw.Span, hash);
             SignedTreeHead? signedTreeHead = null;
             if (_tree != null)
             {
@@ -73,18 +72,18 @@ namespace Uruk.Server.MongoDB
             // Is it posible to fail here ?
             MemoryMarshal.TryGetArray(record.Raw, out var segment);
             var block = new AuditTrailBlock
-            {
-                Iss = payload[JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!,
-                Jti = payload[JwtClaimNames.Jti.EncodedUtf8Bytes].GetString()!,
-                Iat = payload[JwtClaimNames.Iat.EncodedUtf8Bytes].GetInt64(),
-                Aud = payload[JwtClaimNames.Aud.EncodedUtf8Bytes].GetStringArray()!,
-                Txn = payload[SecEventClaimNames.Txn].GetString(),
-                Toe = payload[SecEventClaimNames.Toe].GetInt64(),
-                Events = payload[SecEventClaimNames.Events.EncodedUtf8Bytes].GetJsonDocument(),
-                Raw = segment.Array!,
-                Hash = hash
-                signedTreeHead?.Hash
-            };
+            (
+                iss : payload[JwtClaimNames.Iss.EncodedUtf8Bytes].GetString()!,
+                jti : payload[JwtClaimNames.Jti.EncodedUtf8Bytes].GetString()!,
+                iat : payload[JwtClaimNames.Iat.EncodedUtf8Bytes].GetInt64(),
+                aud : payload[JwtClaimNames.Aud.EncodedUtf8Bytes].GetStringArray()!,
+                txn : payload[SecEventClaimNames.Txn].GetString(),
+                toe : payload[SecEventClaimNames.Toe].GetInt64(),
+                events : payload[SecEventClaimNames.Events.EncodedUtf8Bytes].GetJsonDocument(),
+                raw : segment.Array!,
+                hash : hash,
+                rootHash: signedTreeHead?.Hash
+            );
 
             using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
             try

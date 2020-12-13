@@ -1,4 +1,4 @@
-﻿using JsonWebToken;
+﻿using System.Text.Json;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -6,7 +6,7 @@ namespace Uruk.Server.MongoDB
 {
     internal class AuditTrailBlock
     {
-        public AuditTrailBlock(string iss, string jti, long iat, string[] aud, string? txn, long? toe, JwtObject events, byte[] raw, byte[] hash, byte[]? rootHash)
+        public AuditTrailBlock(string iss, string jti, long iat, string[] aud, string? txn, long? toe, JsonDocument events, byte[] raw, byte[] hash, byte[]? rootHash)
         {
             Iss = iss;
             Jti = jti;
@@ -50,7 +50,7 @@ namespace Uruk.Server.MongoDB
 
         [BsonRequired]
         [BsonElement("events")]
-        public JwtObject Events { get; set; }
+        public JsonDocument Events { get; set; }
 
         [BsonRequired]
         [BsonElement("hash")]

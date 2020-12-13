@@ -1,5 +1,5 @@
 ﻿using System;
-using JsonWebToken;
+using JsonWebToken.Cryptography;
 
 namespace Uruk.Server
 {

@@ -1,5 +1,5 @@
 ﻿using System.Security.Cryptography;
-using JsonWebToken;
+using JsonWebToken.Cryptography;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Bson.Serialization;
