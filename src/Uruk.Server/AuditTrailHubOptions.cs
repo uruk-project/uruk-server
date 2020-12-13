@@ -7,6 +7,6 @@ namespace Uruk.Server
     {
         public AuditTrailHubRegistry Registry { get; } = new AuditTrailHubRegistry();
 
-        public TokenValidationPolicy Policy { get; set; }
+        public TokenValidationPolicy Policy { get; set; } = TokenValidationPolicy.NoValidation;
     }
 }

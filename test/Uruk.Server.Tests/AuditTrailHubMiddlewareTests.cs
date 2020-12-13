@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http;
@@ -301,7 +302,7 @@ namespace Uruk.Server.Tests
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
             Assert.Equal("application/json", response.Content.Headers.ContentType.ToString());
-            Assert.Equal("{\"err\":\"test_error\",\"description\":\"Error description\"}", await response.Content.ReadAsStringAsync());
+            Assert.Equal("{\"err\":\"invalid_request\",\"description\":\"Error\"}", await response.Content.ReadAsStringAsync());
         }
 
         private static SecurityKey GetKey()
@@ -352,9 +353,10 @@ namespace Uruk.Server.Tests
 
         private class ErrorEventReceiverService : IAuditTrailHubService
         {
-            public Task<AuditTrailResponse> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, CancellationToken cancellationToken = default)
+            public Task<bool> TryStoreAuditTrail(ReadOnlySequence<byte> buffer, [NotNullWhen(false)] out AuditTrailError? error, CancellationToken cancellationToken = default)
             {
-                return Task.FromResult(new AuditTrailResponse { Succeeded = false, Error = JsonEncodedText.Encode("test_error"), Description = "Error description" });
+                error = AuditTrailError.InvalidRequest("Error");
+                return Task.FromResult(false);
             }
         }
     }
